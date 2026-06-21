@@ -3,35 +3,59 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Persist — College Finder</title>
+<title>Persist - College Finder</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
-:root { --ink:#16263a; --ink-soft:#5a6b7e; --line:#e3e6ea; --paper:#f6f7f9; --card:#fff;
-  --green:#2e7d5b; --green-soft:#e8f2ec; --amber:#8a6d2f; --hover:#f0f6f3; --two:#9e2a2b; --four:#2a6f97; }
+:root { --ink:#16263a; --ink-soft:#5a6b7e; --line:#e3e6ea; --paper:#f6f7f9;
+  --green:#2e7d5b; --green-soft:#e8f2ec; --hover:#f0f6f3; --two:#9e2a2b; --four:#2a6f97;
+  --blue:#2a6f97; --amber:#a9791f; --rust:#9e2a2b; }
 * { box-sizing:border-box; }
 body { font-family:'Inter',system-ui,sans-serif; color:var(--ink); background:var(--paper); margin:0; -webkit-font-smoothing:antialiased; }
-.wrap { max-width:1180px; margin:0 auto; padding:0 18px 44px; }
-header { padding:28px 0 12px; }
-.mark { font-family:'Fraunces',serif; font-weight:600; font-size:14px; letter-spacing:.14em; text-transform:uppercase; color:var(--green); }
-h1 { font-family:'Fraunces',serif; font-weight:600; font-size:33px; line-height:1.05; margin:5px 0 0; letter-spacing:-.01em; }
+.wrap { max-width:1120px; margin:0 auto; padding:0 18px 44px; }
+.mark { font-family:'Fraunces',serif; font-weight:600; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--green); }
 
-.intro { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin:14px 0 18px; }
-.intro-lead { margin:0 0 16px; font-size:16px; line-height:1.5; color:var(--ink); max-width:80ch; }
-.intro-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; font-size:13px; line-height:1.5; color:var(--ink-soft); }
-.intro-grid b { color:var(--ink); }
-.intro-legend { display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:16px; padding-top:14px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-soft); }
-.intro-legend b { color:var(--ink); }
-.intro-legend span { display:flex; align-items:center; gap:6px; }
-.lg { width:10px; height:10px; border-radius:3px; background:var(--green); display:inline-block; flex:none; }
+.landing { max-width:640px; margin:0 auto; padding:13vh 0 0; text-align:center; }
+.landing-h1 { font-family:'Fraunces',serif; font-weight:600; font-size:35px; line-height:1.12; margin:14px 0 12px; letter-spacing:-.01em; }
+.landing-sub { color:var(--ink-soft); font-size:16px; line-height:1.5; margin:0 auto 28px; max-width:48ch; }
+.landing-select { font:inherit; font-size:17px; font-weight:500; padding:15px 18px; border:2px solid var(--green); border-radius:12px; background:#fff; color:var(--ink); cursor:pointer; width:100%; max-width:380px; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+.landing-select:focus-visible { outline:3px solid var(--green-soft); }
+.landing-foot { margin-top:30px; font-size:12px; color:#9aa6b2; }
 
-.filters { display:flex; flex-wrap:wrap; gap:11px; align-items:flex-end; padding:2px 0 16px; }
+.app-header { display:flex; justify-content:space-between; align-items:flex-end; padding:26px 0 16px; gap:16px; }
+.app-h1 { font-family:'Fraunces',serif; font-weight:600; font-size:29px; line-height:1.08; margin:5px 0 0; letter-spacing:-.01em; }
+.change-state { font:inherit; font-size:13px; font-weight:500; color:var(--green); background:var(--green-soft); border:1px solid #cfe6da; border-radius:9px; padding:8px 13px; cursor:pointer; white-space:nowrap; }
+
+.top5-wrap { margin-bottom:8px; }
+.top5-title { font-size:14px; font-weight:600; margin-bottom:12px; }
+.top5-title span { color:var(--ink-soft); font-weight:400; font-size:13px; }
+.top5 { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:11px; }
+.t5card { display:flex; gap:11px; border:1px solid var(--line); border-radius:12px; padding:13px 14px; background:#fff; }
+.t5rank { font-family:'Fraunces',serif; font-weight:600; font-size:20px; color:var(--green); line-height:1; flex:none; width:18px; }
+.t5name { font-weight:600; font-size:13.5px; line-height:1.25; margin-bottom:6px; }
+.t5stats { font-size:12px; color:var(--ink-soft); line-height:1.5; font-variant-numeric:tabular-nums; }
+.t5stats b { color:var(--ink); }
+.t5empty { grid-column:1/-1; font-size:13px; color:var(--ink-soft); border:1px dashed #cdd3d9; border-radius:12px; padding:18px; text-align:center; }
+
+.pill { display:inline-block; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:11px; color:#fff; letter-spacing:.02em; vertical-align:middle; }
+.pill.Strong { background:var(--green); } .pill.Good { background:var(--blue); }
+.pill.Fair { background:var(--amber); } .pill.Caution { background:var(--rust); }
+
+.filters { display:flex; flex-wrap:wrap; gap:11px; align-items:flex-end; padding:20px 0 6px; }
 .search { flex:1 1 200px; font:inherit; font-size:14px; padding:9px 12px; border:1px solid var(--line); border-radius:9px; background:#fff; }
-select { font:inherit; font-size:13.5px; padding:9px 11px; border:1px solid var(--line); border-radius:9px; background:#fff; cursor:pointer; color:var(--ink); }
-.slider { display:flex; flex-direction:column; gap:5px; font-size:12px; color:var(--ink-soft); min-width:160px; }
+select.f { font:inherit; font-size:13.5px; padding:9px 11px; border:1px solid var(--line); border-radius:9px; background:#fff; cursor:pointer; color:var(--ink); }
+.slider { display:flex; flex-direction:column; gap:5px; font-size:12px; color:var(--ink-soft); min-width:150px; }
 .slider b { color:var(--ink); font-variant-numeric:tabular-nums; }
 .slider input { accent-color:var(--green); cursor:pointer; }
-.search:focus-visible, select:focus-visible, .slider input:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
-.bar { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-top:1px solid var(--line); flex-wrap:wrap; gap:10px; }
+.search:focus-visible, select.f:focus-visible, .slider input:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+
+.statebox { display:flex; flex-wrap:wrap; align-items:center; gap:7px; padding:8px 0 2px; }
+.statebox-label { font-size:12px; font-weight:600; color:var(--ink-soft); }
+.schip { display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:var(--green); background:var(--green-soft); border:1px solid #cfe6da; border-radius:16px; padding:3px 5px 3px 11px; }
+.schip.allchip { padding:3px 11px; }
+.schip button { background:none; border:none; color:var(--green); cursor:pointer; font-size:15px; line-height:1; padding:0 3px; border-radius:50%; }
+.schip button:hover { background:#cfe6da; }
+
+.bar { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-top:1px solid var(--line); margin-top:10px; flex-wrap:wrap; gap:10px; }
 .count { font-size:13px; font-weight:600; }
 .bar-right { display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
 .chip { font:inherit; font-size:12.5px; font-weight:600; color:var(--green); background:var(--green-soft); border:1px solid #cfe6da; border-radius:20px; padding:5px 12px; cursor:pointer; display:none; }
@@ -39,7 +63,7 @@ select { font:inherit; font-size:13.5px; padding:9px 11px; border:1px solid var(
 .reset { font:inherit; font-size:12.5px; color:var(--ink-soft); background:none; border:none; cursor:pointer; text-decoration:underline; }
 
 .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:#fff; }
-table { width:100%; border-collapse:collapse; font-size:13px; min-width:980px; }
+table { width:100%; border-collapse:collapse; font-size:13px; min-width:940px; }
 th { position:sticky; top:0; background:#fff; text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); padding:11px 10px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; user-select:none; }
 th.num { text-align:right; } th.hero { color:var(--green); } th.sorted, th:hover { color:var(--ink); }
 .th-star { width:34px; cursor:default; }
@@ -53,72 +77,123 @@ td.num { text-align:right; } td.hero { font-weight:600; color:var(--green); }
 .dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin:0 7px; }
 .lvl { font-size:10px; font-weight:600; padding:1px 6px; border-radius:10px; margin-left:7px; }
 .lvl.two { color:var(--two); background:#f7e7e7; } .lvl.four { color:var(--four); background:#e4eef5; }
-.fit { font-size:11px; font-weight:600; padding:2px 10px; border-radius:20px; white-space:nowrap; }
-.fit.strong { background:#d7eede; color:#1f6a45; }
-.fit.good { background:#e9f3ec; color:#3c8a63; }
-.fit.fair { background:#fbf0d9; color:#8a6d2f; }
-.fit.caution { background:#f7e3e3; color:#9e2a2b; }
 .td-star { text-align:center; }
 .star { background:none; border:none; cursor:pointer; font-size:17px; color:#c2c8cf; padding:2px; }
 .star.on { color:var(--green); }
 .empty { padding:28px; text-align:center; color:var(--ink-soft); }
 .hint { font-size:12px; color:var(--ink-soft); margin:12px 2px 0; }
+
+.legend-details { margin-top:18px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+.legend-details summary { cursor:pointer; padding:12px 16px; font-size:13px; font-weight:600; color:var(--ink); list-style:none; }
+.legend-details summary::-webkit-details-marker { display:none; }
+.legend-details summary::before { content:'\25B8  '; color:var(--ink-soft); }
+.legend-details[open] summary::before { content:'\25BE  '; }
+.legend-body { padding:0 16px 16px; }
+.lg-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px 22px; }
+.lg-group .lg-h { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--green); margin-bottom:5px; }
+.lg-group div.lg-row { font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin-bottom:3px; }
+.lg-group b { color:var(--ink); }
+.lg-note { margin-top:14px; padding-top:13px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-soft); line-height:1.55; }
+.lg-note b { color:var(--ink); }
 footer { margin-top:16px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-soft); line-height:1.6; }
-@media (max-width:720px){ h1{font-size:26px;} .search{flex-basis:100%;} .intro-grid{grid-template-columns:1fr;} }
+@media (max-width:640px){ .landing-h1{font-size:28px;} .app-h1{font-size:24px;} .search{flex-basis:100%;} }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="mark">Persist</div>
-    <h1>College Finder</h1>
-  </header>
 
-  <section class="intro">
-    <p class="intro-lead">A counselor's tool for comparing where low-income students get in, afford the cost, and actually graduate — built on official U.S. Department of Education data.</p>
-    <div class="intro-grid">
-      <div><b>What this is</b><br>College Scorecard data for <span id="nschools"></span> U.S. colleges — four-year schools and community colleges.</div>
-      <div><b>Where &amp; when</b><br>Official federal data (U.S. Dept. of Education), updated June 2026. Graduation figures track students who entered college several years earlier.</div>
-      <div><b>How to use it</b><br>Search or filter to the schools a student is weighing, sort by <b>Fit</b>, and ★ the contenders to compare them.</div>
-    </div>
-    <div class="intro-legend">
-      <span><i class="lg"></i><b>Fit</b> — graduates low-income students well + affordable for them. A starting point, not a verdict.</span>
-      <span><b>Grad&nbsp;—&nbsp;low-inc</b>: % of Pell (low-income) students who finish.</span>
-      <span><b>Cost&nbsp;&lt;$30k&nbsp;fam</b>: what a family earning under $30k actually pays.</span>
-      <span><b>Equity&nbsp;gap</b>: how far low-income grad trails the school's overall rate.</span>
-    </div>
+  <section id="landing" class="landing">
+    <div class="mark">Persist, for Student Leadership Network</div>
+    <h1 class="landing-h1">Where do lower-income students actually graduate, and afford it?</h1>
+    <p class="landing-sub">Start with your state. You will see the colleges that graduate Pell-eligible (lower-income) students best, and you can compare any schools a student is weighing.</p>
+    <select id="landingState" class="landing-select" aria-label="Choose your state"></select>
+    <p class="landing-foot" id="landingFoot"></p>
   </section>
 
-  <section class="filters">
-    <input class="search" id="q" placeholder="Search school name…">
-    <select id="state"></select>
-    <select id="level">
-      <option value="All">2-year + 4-year</option>
-      <option value="4-year">4-year only</option>
-      <option value="2-year (community)">Community colleges only</option>
-    </select>
-    <select id="sector">
-      <option value="All">All sectors</option><option>Public</option>
-      <option>Private nonprofit</option><option>Private for-profit</option>
-    </select>
-    <label class="slider"><span>Cost &lt;$30k fam ≤ <b id="priceLbl">$40,000</b></span>
-      <input type="range" id="price" min="0" max="40000" step="500" value="40000"></label>
-    <label class="slider"><span>Low-inc grad ≥ <b id="gradLbl">0%</b></span>
-      <input type="range" id="grad" min="0" max="0.9" step="0.05" value="0"></label>
-  </section>
-  <div class="bar">
-    <span class="count" id="count"></span>
-    <div class="bar-right">
-      <button class="chip" id="chip"></button>
-      <button class="reset" id="reset">Reset</button>
+  <div id="app" style="display:none">
+    <div class="app-header">
+      <div>
+        <div class="mark">Persist, College Finder</div>
+        <h1 class="app-h1" id="appTitle"></h1>
+      </div>
+      <button class="change-state" id="changeState">Start over</button>
     </div>
+
+    <div class="top5-wrap">
+      <div class="top5-title" id="top5Title"></div>
+      <div class="top5" id="top5"></div>
+    </div>
+
+    <div class="statebox">
+      <span class="statebox-label">States:</span>
+      <span id="stateChips"></span>
+      <select class="f" id="addState"></select>
+    </div>
+
+    <section class="filters">
+      <input class="search" id="q" placeholder="Search school name...">
+      <select class="f" id="level">
+        <option value="All">2-year and 4-year</option>
+        <option value="4-year">4-year only</option>
+        <option value="2-year (community)">2-year only</option>
+      </select>
+      <select class="f" id="sector">
+        <option value="All">All sectors</option><option>Public</option>
+        <option>Private nonprofit</option><option>Private for-profit</option>
+      </select>
+      <label class="slider"><span>Max cost up to <b id="priceLbl">$40,000</b></span>
+        <input type="range" id="price" min="0" max="40000" step="500" value="40000"></label>
+      <label class="slider"><span>Pell grad at least <b id="gradLbl">0%</b></span>
+        <input type="range" id="grad" min="0" max="0.9" step="0.05" value="0"></label>
+    </section>
+
+    <div class="bar">
+      <span class="count" id="count"></span>
+      <div class="bar-right">
+        <button class="chip" id="chip"></button>
+        <button class="reset" id="reset">Clear filters</button>
+      </div>
+    </div>
+
+    <div class="tablewrap"><table>
+      <thead><tr id="head"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table></div>
+    <p class="hint">Sorted by best Fit. Tap any column header to re-sort. Showing up to 100 rows, so narrow with filters to see the rest.</p>
+
+    <details class="legend-details">
+      <summary>What do these columns mean?</summary>
+      <div class="legend-body">
+        <div class="lg-grid">
+          <div class="lg-group">
+            <div class="lg-h">Who attends the school</div>
+            <div class="lg-row"><b>Students</b>: how many undergraduates are enrolled.</div>
+            <div class="lg-row"><b>Admits</b>: share of applicants accepted. "Open" means it accepts nearly everyone.</div>
+            <div class="lg-row"><b>% Pell</b>: share of enrolled students who are Pell-eligible (lower-income).</div>
+          </div>
+          <div class="lg-group">
+            <div class="lg-h">Who graduates (outcomes)</div>
+            <div class="lg-row"><b>Pell grad</b>: share of Pell-eligible students who finish a degree. The number that matters most.</div>
+            <div class="lg-row"><b>Overall grad</b>: share of all students who finish a degree.</div>
+            <div class="lg-row"><b>Equity gap</b>: how far Pell graduation trails the overall rate.</div>
+          </div>
+          <div class="lg-group">
+            <div class="lg-h">Cost</div>
+            <div class="lg-row"><b>Cost &lt;$30k fam</b>: yearly net price after aid for a family earning under $30,000. "$0" means aid covers it.</div>
+          </div>
+          <div class="lg-group">
+            <div class="lg-h">Fit</div>
+            <div class="lg-row">A quick guide combining Pell graduation (weighted most) and affordability: <span class="pill Strong">Strong</span> <span class="pill Good">Good</span> <span class="pill Fair">Fair</span> <span class="pill Caution">Caution</span>. Below about 35% Pell graduation is always Caution, no matter the price. A starting point, not a verdict.</div>
+          </div>
+        </div>
+        <div class="lg-note">
+          <b>What does "Pell-eligible" mean?</b> A Pell-eligible student receives a federal Pell Grant, awarded to undergraduates with significant financial need based on the FAFSA. It is the standard federal marker for lower-income students, and counselors and families usually know whether a student qualifies. If the student in front of you is Pell-eligible, focus on the <b>Pell grad</b> column. If the student is not, the <b>Overall grad</b> column is the one to watch.
+        </div>
+      </div>
+    </details>
+
+    <footer>Source: U.S. Department of Education College Scorecard, published June 2026. Graduation rates describe students who entered college several years ago. Built for Student Leadership Network.</footer>
   </div>
-  <div class="tablewrap"><table>
-    <thead><tr id="head"></tr></thead>
-    <tbody id="tbody"></tbody>
-  </table></div>
-  <p class="hint">Sorted by Fit (best first). Click any column header to re-sort. Showing at most 100 rows — narrow with filters to see the rest. Scroll sideways on a small screen.</p>
-  <footer>Source: U.S. Dept. of Education College Scorecard (updated June 2026) · "Low-inc" = Pell-grant students · "Open" = open admission · zero/negative cost = aid meets or exceeds cost · Fit weights graduation of low-income students (70%) and affordability (30%); schools graduating fewer than ~1 in 3 low-income students are flagged Caution regardless of price · A guide, not a verdict — it can't see a school's programs, location, or support services · Built for Student Leadership Network</footer>
 </div>
 
 <script>
@@ -129,44 +204,60 @@ const usd = n => '$'+Math.round(n).toLocaleString('en-US');
 const pct = x => Math.round(x*100)+'%';
 const priceLabel = p => p<=0 ? '$0' : usd(p);
 const admitLabel = a => a>=0.99 ? 'Open' : pct(a);
-const gapLabel = v => v==null ? '—' : (v>=0?'+':'')+Math.round(v*100)+'pt';
-const COLS = [
-  {key:'state',label:'State',num:false,fmt:v=>v},
-  {key:'size',label:'Size',num:true,fmt:v=>v?Math.round(v).toLocaleString('en-US'):'—'},
-  {key:'admission_rate',label:'Admits',num:true,fmt:admitLabel},
-  {key:'pell_share',label:'% Pell',num:true,fmt:pct},
-  {key:'net_price_low_income',label:'Cost <$30k fam',num:true,fmt:priceLabel},
-  {key:'grad_low_income',label:'Grad — low-inc',num:true,fmt:pct,hero:true},
-  {key:'grad_all',label:'Grad — all',num:true,fmt:v=>v==null?'—':pct(v)},
-  {key:'equity_gap',label:'Equity gap',num:true,fmt:gapLabel},
-];
+const gapLabel = v => v==null ? '\u2014' : (v>=0?'+':'')+Math.round(v*100)+'pt';
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-// --- FIT SCORE: graduation of low-income students (70%) + affordability (30%);
-//     a low grad rate is disqualifying regardless of price (the equity-gap lesson). ---
-const affordComp = p => Math.max(0, Math.min(1, (25000 - p) / 25000));
-const fitScore = s => Math.round(100 * (0.70 * s.grad_low_income + 0.30 * affordComp(s.net_price_low_income)));
+const affordability = p => Math.max(0, Math.min(1, (25000 - p) / 25000));
+const fitScore = s => 70*s.grad_low_income + 30*affordability(s.net_price_low_income);
 function fitTier(s){
-  if (s.grad_low_income < 0.35) return {label:'Caution', cls:'caution'};
+  if (s.grad_low_income < 0.35) return 'Caution';
   const sc = fitScore(s);
-  if (sc >= 75) return {label:'Strong', cls:'strong'};
-  if (sc >= 60) return {label:'Good',   cls:'good'};
-  if (sc >= 45) return {label:'Fair',   cls:'fair'};
-  return {label:'Caution', cls:'caution'};
+  if (sc >= 62) return 'Strong';
+  if (sc >= 46) return 'Good';
+  if (sc >= 32) return 'Fair';
+  return 'Caution';
 }
-const fitSortVal = s => fitScore(s) - (s.grad_low_income < 0.35 ? 100 : 0);
+const fitVal = s => (s.grad_low_income < 0.35 ? -1 : fitScore(s));
 
-const S = {q:'',state:'All',sector:'All',level:'All',maxPrice:40000,minGrad:0,sortKey:'fit',sortDir:'desc',saved:new Set(),savedOnly:false};
+const COLS = [
+  {key:'size',label:'Students',num:true,fmt:v=>v?Math.round(v).toLocaleString('en-US'):'\u2014'},
+  {key:'admission_rate',label:'Admits',num:true,fmt:admitLabel},
+  {key:'pell_share',label:'% Pell',num:true,fmt:pct},
+  {key:'net_price_low_income',label:'Cost &lt;$30k fam',num:true,fmt:priceLabel},
+  {key:'grad_low_income',label:'Pell grad',num:true,fmt:pct,hero:true},
+  {key:'grad_all',label:'Overall grad',num:true,fmt:v=>v==null?'\u2014':pct(v)},
+  {key:'equity_gap',label:'Equity gap',num:true,fmt:gapLabel},
+];
 
-const four = SCHOOLS.filter(s=>s.level==='4-year').length;
-document.getElementById('nschools').textContent = SCHOOLS.length.toLocaleString();
-const states = ['All', ...Array.from(new Set(SCHOOLS.map(s=>s.state))).sort()];
-document.getElementById('state').innerHTML = states.map(s=>'<option value="'+s+'">'+(s==='All'?'All states':s)+'</option>').join('');
+const S = {states:[],q:'',sector:'All',level:'All',maxPrice:40000,minGrad:0,sortKey:'fit',sortDir:'desc',saved:new Set(),savedOnly:false};
+
+const states = Array.from(new Set(SCHOOLS.map(s=>s.state))).sort();
+document.getElementById('landingFoot').textContent =
+  'Data: U.S. Department of Education College Scorecard. '+SCHOOLS.length.toLocaleString()+' colleges. Published June 2026.';
+document.getElementById('landingState').innerHTML =
+  '<option value="">Choose your state...</option>' + states.map(s=>'<option value="'+s+'">'+s+'</option>').join('') +
+  '<option value="ALL">All states (browse everything)</option>';
+
+function whereText(){ return S.states.length ? S.states.join(', ') : (document.getElementById('app').dataset.all ? 'All states' : ''); }
+function setTitle(){ document.getElementById('appTitle').textContent = S.states.length ? S.states.join(', ') : 'All states'; }
+
+function renderChips(){
+  const box = document.getElementById('stateChips');
+  if(S.states.length===0){ box.innerHTML = '<span class="schip allchip">All states</span>'; }
+  else box.innerHTML = S.states.map(st=>'<span class="schip">'+st+' <button data-rm="'+st+'" aria-label="remove '+st+'">\u00D7</button></span>').join('');
+  const add = document.getElementById('addState');
+  add.innerHTML = '<option value="">+ add state</option>' + states.filter(s=>!S.states.includes(s)).map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+}
+function enterApp(){
+  document.getElementById('landing').style.display='none';
+  document.getElementById('app').style.display='block';
+  renderChips(); setTitle(); window.scrollTo(0,0); render();
+}
 
 function getRows(){
   let r = SCHOOLS.filter(s =>
     s.name.toLowerCase().includes(S.q.toLowerCase()) &&
-    (S.state==='All'||s.state===S.state) &&
+    (S.states.length===0 || S.states.includes(s.state)) &&
     (S.sector==='All'||s.sector===S.sector) &&
     (S.level==='All'||s.level===S.level) &&
     s.net_price_low_income<=S.maxPrice &&
@@ -174,16 +265,30 @@ function getRows(){
     (!S.savedOnly||S.saved.has(s.name)));
   const d = S.sortDir==='asc'?1:-1;
   r.sort((a,b)=>{
-    let av, bv;
-    if (S.sortKey==='fit'){ av=fitSortVal(a); bv=fitSortVal(b); }
-    else { av=a[S.sortKey]; bv=b[S.sortKey]; }
+    if(S.sortKey==='fit') return (fitVal(a)-fitVal(b))*d;
+    const av=a[S.sortKey],bv=b[S.sortKey];
     if(av==null)return 1; if(bv==null)return -1;
     if(typeof av==='string')return av.localeCompare(bv)*d; return (av-bv)*d;
   });
   return r;
 }
+function renderTop5(filtered){
+  const top = [...filtered].sort((a,b)=>b.grad_low_income-a.grad_low_income).slice(0,5);
+  const where = S.states.length ? S.states.join(', ') : 'nationwide';
+  document.getElementById('top5Title').innerHTML =
+    'Best for Pell-eligible students in '+esc(where)+' <span>(highest graduation rate among Pell-eligible students)</span>';
+  const box = document.getElementById('top5');
+  if(top.length===0){ box.innerHTML='<div class="t5empty">No schools match the current filters.</div>'; return; }
+  box.innerHTML = top.map((s,i)=>{
+    const tier=fitTier(s);
+    return '<div class="t5card"><div class="t5rank">'+(i+1)+'</div><div><div class="t5name">'+esc(s.name)+
+      ' <span class="pill '+tier+'">'+tier+'</span></div><div class="t5stats">Pell grad <b>'+pct(s.grad_low_income)+
+      '</b><br>Cost <b>'+priceLabel(s.net_price_low_income)+'</b>, '+(s.level.charAt(0)==='2'?'2-year':'4-year')+
+      '</div></div></div>';
+  }).join('');
+}
 function headHtml(){
-  const arr = k => S.sortKey===k ? '<span class="arrow">'+(S.sortDir==='asc'?'▲':'▼')+'</span>' : '';
+  const arr = k => S.sortKey===k ? '<span class="arrow">'+(S.sortDir==='asc'?'\u25B2':'\u25BC')+'</span>' : '';
   let h = '<th class="th-star"></th>';
   h += '<th class="'+(S.sortKey==='name'?'sorted':'')+'" data-sort="name">School '+arr('name')+'</th>';
   h += '<th class="'+(S.sortKey==='fit'?'sorted':'')+'" data-sort="fit">Fit '+arr('fit')+'</th>';
@@ -191,11 +296,12 @@ function headHtml(){
   return h;
 }
 function render(){
-  document.getElementById('head').innerHTML = headHtml();
   const rows = getRows();
-  document.getElementById('count').textContent = rows.length.toLocaleString()+' match'+(rows.length>ROW_CAP?(' · showing top '+ROW_CAP):'');
+  renderTop5(rows);
+  document.getElementById('head').innerHTML = headHtml();
+  document.getElementById('count').textContent = rows.length.toLocaleString()+' school'+(rows.length===1?'':'s')+(rows.length>ROW_CAP?(' (showing top '+ROW_CAP+')'):'');
   const tbody = document.getElementById('tbody');
-  if(rows.length===0){ tbody.innerHTML='<tr><td colspan="'+(COLS.length+3)+'" class="empty">No schools match. Widen a filter or hit Reset.</td></tr>'; return; }
+  if(rows.length===0){ tbody.innerHTML='<tr><td colspan="'+(COLS.length+3)+'" class="empty">No schools match. Clear a filter to see more.</td></tr>'; return; }
   tbody.innerHTML = rows.slice(0,ROW_CAP).map(s=>{
     const tds = COLS.map(c=>{
       const t = (c.key==='net_price_low_income'&&s[c.key]<=0)?' title="Aid meets or exceeds cost of attendance"':'';
@@ -205,9 +311,9 @@ function render(){
     const tier = fitTier(s);
     const on = S.saved.has(s.name);
     return '<tr class="'+(on?'saved':'')+'">'+
-      '<td class="td-star"><button class="star'+(on?' on':'')+'" data-name="'+esc(s.name)+'">'+(on?'★':'☆')+'</button></td>'+
+      '<td class="td-star"><button class="star'+(on?' on':'')+'" data-name="'+esc(s.name)+'">'+(on?'\u2605':'\u2606')+'</button></td>'+
       '<td class="td-name"><span class="dot" style="background:'+(TONE[s.sector]||'#999')+'"></span>'+esc(s.name)+lvl+'</td>'+
-      '<td><span class="fit '+tier.cls+'">'+tier.label+'</span></td>'+
+      '<td><span class="pill '+tier+'">'+tier+'</span></td>'+
       tds+'</tr>';
   }).join('');
 }
@@ -215,19 +321,38 @@ function updateChip(){
   const c = document.getElementById('chip');
   if(S.saved.size===0){ c.style.display='none'; S.savedOnly=false; return; }
   c.style.display='inline-block';
-  c.textContent = '★ '+S.saved.size+' saved'+(S.savedOnly?' — showing':'');
+  c.textContent = '\u2605 '+S.saved.size+' saved'+(S.savedOnly?' (showing)':'');
   c.classList.toggle('on', S.savedOnly);
 }
+
+document.getElementById('landingState').onchange = e=>{
+  const v=e.target.value; if(!v) return;
+  S.states = (v==='ALL') ? [] : [v];
+  enterApp();
+};
+document.getElementById('changeState').onclick = ()=>{
+  document.getElementById('app').style.display='none';
+  document.getElementById('landing').style.display='block';
+  document.getElementById('landingState').value=''; window.scrollTo(0,0);
+};
+document.getElementById('addState').onchange = e=>{
+  const v=e.target.value; if(!v) return;
+  if(!S.states.includes(v)) S.states.push(v);
+  renderChips(); setTitle(); render();
+};
+document.getElementById('stateChips').addEventListener('click', e=>{
+  const b=e.target.closest('[data-rm]'); if(!b) return;
+  S.states = S.states.filter(x=>x!==b.dataset.rm);
+  renderChips(); setTitle(); render();
+});
 document.getElementById('q').oninput = e=>{S.q=e.target.value; render();};
-document.getElementById('state').onchange = e=>{S.state=e.target.value; render();};
 document.getElementById('level').onchange = e=>{S.level=e.target.value; render();};
 document.getElementById('sector').onchange = e=>{S.sector=e.target.value; render();};
 document.getElementById('price').oninput = e=>{S.maxPrice=+e.target.value; document.getElementById('priceLbl').textContent=usd(S.maxPrice); render();};
 document.getElementById('grad').oninput = e=>{S.minGrad=+e.target.value; document.getElementById('gradLbl').textContent=pct(S.minGrad); render();};
 document.getElementById('reset').onclick = ()=>{
-  S.q='';S.state='All';S.sector='All';S.level='All';S.maxPrice=40000;S.minGrad=0;S.savedOnly=false;
-  document.getElementById('q').value=''; document.getElementById('state').value='All';
-  document.getElementById('level').value='All'; document.getElementById('sector').value='All';
+  S.q='';S.sector='All';S.level='All';S.maxPrice=40000;S.minGrad=0;S.savedOnly=false;
+  document.getElementById('q').value=''; document.getElementById('level').value='All'; document.getElementById('sector').value='All';
   document.getElementById('price').value=40000; document.getElementById('priceLbl').textContent='$40,000';
   document.getElementById('grad').value=0; document.getElementById('gradLbl').textContent='0%';
   updateChip(); render();
@@ -246,7 +371,6 @@ document.getElementById('tbody').addEventListener('click', e=>{
   if(S.saved.has(n)) S.saved.delete(n); else S.saved.add(n);
   updateChip(); render();
 });
-render();
 </script>
 </body>
 </html>
