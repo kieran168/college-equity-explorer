@@ -140,6 +140,14 @@ td.num { text-align:right; } td.hero { font-weight:600; color:var(--green); }
 .drow .dl { color:var(--ink-soft); } .drow .dv { font-variant-numeric:tabular-nums; font-weight:600; text-align:right; }
 @media (max-width:760px){ .dgroups{grid-template-columns:1fr;} .highlights{grid-template-columns:1fr;} }
 
+.col-panel { border:1px solid var(--line); border-radius:12px; background:#fff; padding:14px 16px; margin:4px 0 2px; }
+.col-panel-head { display:flex; align-items:center; gap:14px; margin-bottom:12px; flex-wrap:wrap; }
+.col-panel-head .cph-title { font-size:13px; font-weight:600; flex:1; min-width:200px; }
+.col-groups { display:grid; grid-template-columns:repeat(auto-fill,minmax(195px,1fr)); gap:14px 22px; }
+.col-group-h { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--green); margin-bottom:6px; }
+.col-check { display:block; font-size:12.5px; color:var(--ink); padding:2px 0; cursor:pointer; line-height:1.4; }
+.col-check input { accent-color:var(--green); margin-right:6px; vertical-align:middle; }
+.col-check.locked { color:var(--ink-soft); cursor:default; }
 footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-soft); line-height:1.6; }
 @media (max-width:640px){ .landing-h1{font-size:28px;} .section-h1{font-size:23px;} .search{flex-basis:100%;} }
 </style>
@@ -263,9 +271,12 @@ footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); fo
         <div class="bar-right">
           <span class="pininfo" id="exPinInfo"></span>
           <button class="reset" id="exClearPins" style="display:none">Clear pins</button>
+          <button class="linkbtn" id="colBtn">Add or remove columns</button>
           <button class="reset" id="exReset">Clear filters</button>
         </div>
       </div>
+
+      <div class="col-panel" id="colPanel" style="display:none"></div>
 
       <div class="tablewrap"><table>
         <thead><tr id="exHead"></tr></thead>
@@ -357,6 +368,7 @@ const F = {
   race_black:{l:'Black',f:pctf,g:'who'},
   race_hispanic:{l:'Hispanic',f:pctf,g:'who'},
   race_asian:{l:'Asian',f:pctf,g:'who'},
+  state:{l:'State',f:strf,g:'where'},
   city:{l:'City',f:strf,g:'where'},
   zip:{l:'ZIP',f:strf,g:'where'},
   locale_code:{l:'Setting',f:localef,g:'where'},
@@ -402,7 +414,8 @@ const LENSES = [
     metric:null, dir:'asc', best:null, worst:null },
 ];
 const LENS_BY_ID = Object.fromEntries(LENSES.map(l=>[l.id,l]));
-const GROUP_ORDER = [['cost','Cost'],['out','Graduation'],['debt','Debt'],['earn','Earnings'],['admit','Getting in'],['who','Who goes here'],['where','Where it is']];
+const GROUP_ORDER = [['core','General'],['cost','Cost'],['out','Graduation'],['debt','Debt'],['earn','Earnings'],['admit','Getting in'],['who','Who goes here'],['where','Where it is']];
+const PICKER_GROUPS = [['core','General'],['cost','Cost'],['out','Graduation & retention'],['debt','Debt'],['earn','Earnings'],['admit','Getting in'],['who','Who goes here'],['where','Where it is']];
 
 const states = Array.from(new Set(SCHOOLS.map(s=>s.state))).sort();
 const lvlBadge = s => s.level.charAt(0)==='2' ? '<span class="lvl two">2-yr</span>' : '<span class="lvl four">4-yr</span>';
@@ -421,7 +434,7 @@ const S = {
   saved:new Set(),                                     // SHARED pins (follow you everywhere)
   findEntered:false,
   find:{ maxPrice:40000, minGrad:0, sortKey:'fit', sortDir:'desc' },
-  ex:{ sortKey:null, sortDir:'desc' },
+  ex:{ sortKey:null, sortDir:'desc', cols:{}, pickerOpen:false },
 };
 
 const afford = p => Math.max(0, Math.min(1, (25000 - p)/25000));
@@ -652,6 +665,32 @@ document.getElementById('findBody').addEventListener('click',e=>{
 document.getElementById('top5').addEventListener('click',e=>{ const d=e.target.closest('[data-detail]'); if(d) openDetail(d.dataset.detail); });
 
 // ================= EXPLORE MODE =================
+function activeCols(L){ if(!S.ex.cols[L.id]) S.ex.cols[L.id]=L.cols.slice(); return S.ex.cols[L.id]; }
+function toggleCol(L,key){
+  const arr=activeCols(L); const i=arr.indexOf(key);
+  if(i>=0){ if(key===L.metric) return; arr.splice(i,1); if(S.ex.sortKey===key){ S.ex.sortKey=L.metric||'name'; S.ex.sortDir=L.dir||'desc'; } }
+  else arr.push(key);
+  renderLensView();
+}
+function resetCols(L){ S.ex.cols[L.id]=L.cols.slice(); if(!activeCols(L).includes(S.ex.sortKey)){ S.ex.sortKey=L.metric||'name'; S.ex.sortDir=L.dir||'desc'; } renderLensView(); }
+function renderColPanel(L){
+  const active=new Set(activeCols(L));
+  let html='<div class="col-panel-head"><span class="cph-title">Columns shown in this lens (your picks apply to this lens)</span>'+
+    '<button class="reset" id="colReset">Reset to default</button>'+
+    '<button class="linkbtn" id="colDone">Done</button></div>';
+  html+='<div class="col-groups">';
+  for(const [gid,glabel] of PICKER_GROUPS){
+    const keys=Object.keys(F).filter(k=>F[k].g===gid);
+    if(!keys.length) continue;
+    html+='<div class="col-group"><div class="col-group-h">'+glabel+'</div>';
+    html+=keys.map(k=>{ const on=active.has(k); const locked=(k===L.metric);
+      return '<label class="col-check'+(locked?' locked':'')+'"><input type="checkbox" data-col="'+k+'"'+(on?' checked':'')+(locked?' disabled':'')+'>'+esc(F[k].l)+(locked?' (key metric)':'')+'</label>';
+    }).join('');
+    html+='</div>';
+  }
+  html+='</div>';
+  document.getElementById('colPanel').innerHTML=html;
+}
 function renderLensMenu(){
   document.getElementById('lensMenu').style.display='block';
   document.getElementById('lensView').style.display='none';
@@ -684,13 +723,13 @@ function exHeadHtml(L){
   const arr=k=>x.sortKey===k?'<span class="arrow">'+(x.sortDir==='asc'?'\u25B2':'\u25BC')+'</span>':'';
   let h='<th class="th-star"></th>';
   h+='<th class="'+(x.sortKey==='name'?'sorted':'')+'" data-sort="name">School '+arr('name')+'</th>';
-  h+=L.cols.map(k=>{ const hero=(k===L.metric);
+  h+=activeCols(L).map(k=>{ const hero=(k===L.metric);
     return '<th class="'+(isNum(k)?'num ':'')+(hero?'hero ':'')+(x.sortKey===k?'sorted':'')+'" data-sort="'+k+'">'+esc(F[k]?F[k].l:k)+' '+arr(k)+'</th>'; }).join('');
   return h;
 }
 function exRow(s,L){
   const on=S.saved.has(s.name);
-  const tds=L.cols.map(k=>{ const hero=(k===L.metric);
+  const tds=activeCols(L).map(k=>{ const hero=(k===L.metric);
     return '<td class="'+(isNum(k)?'num ':'')+(hero?'hero':'')+'">'+fmt(k,s[k])+'</td>'; }).join('');
   return '<tr class="'+(on?'pinned-row':'')+'">'+
     '<td class="td-star"><button class="star'+(on?' on':'')+'" data-name="'+esc(s.name)+'" title="'+(on?'Unpin':'Pin to top')+'">'+(on?'\u2605':'\u2606')+'</button></td>'+
@@ -708,7 +747,7 @@ function renderHighlights(L, rows){
                 '<div class="hl-card"><div class="hl-label">'+esc(L.worst)+'</div>'+mk(worst)+'</div>';
 }
 function renderLensView(){
-  const L=LENS_BY_ID[S.lens], x=S.ex, f=S.f;
+  const L=LENS_BY_ID[S.lens], x=S.ex, f=S.f, cols=activeCols(L);
   document.getElementById('lensMenu').style.display='none';
   document.getElementById('lensView').style.display='block';
   document.getElementById('lensTitle').textContent=L.title;
@@ -734,13 +773,16 @@ function renderLensView(){
   document.getElementById('exClearPins').style.display=pinnedSorted.length?'inline-block':'none';
   let html='';
   if(pinnedSorted.length){
-    html+='<tr class="grouprow pin"><td colspan="'+(L.cols.length+2)+'">Pinned ('+pinnedSorted.length+'): your comparison set</td></tr>';
+    html+='<tr class="grouprow pin"><td colspan="'+(cols.length+2)+'">Pinned ('+pinnedSorted.length+'): your comparison set</td></tr>';
     html+=pinnedSorted.map(s=>exRow(s,L)).join('');
-    html+='<tr class="grouprow"><td colspan="'+(L.cols.length+2)+'">All schools</td></tr>';
+    html+='<tr class="grouprow"><td colspan="'+(cols.length+2)+'">All schools</td></tr>';
   }
   if(shown.length) html+=shown.map(s=>exRow(s,L)).join('');
-  else if(!pinnedSorted.length) html='<tr><td colspan="'+(L.cols.length+2)+'" class="empty">No schools match. Clear a filter.</td></tr>';
+  else if(!pinnedSorted.length) html='<tr><td colspan="'+(cols.length+2)+'" class="empty">No schools match. Clear a filter.</td></tr>';
   document.getElementById('exBody').innerHTML=html;
+  const panel=document.getElementById('colPanel');
+  if(S.ex.pickerOpen){ panel.style.display='block'; renderColPanel(L); document.getElementById('colBtn').textContent='Done choosing columns'; }
+  else { panel.style.display='none'; document.getElementById('colBtn').textContent='Add or remove columns'; }
 }
 function renderExplore(){ if(S.lens && LENS_BY_ID[S.lens]) renderLensView(); else renderLensMenu(); }
 
@@ -758,6 +800,9 @@ document.getElementById('exBody').addEventListener('click',e=>{
   const d=e.target.closest('[data-detail]'); if(d) openDetail(d.dataset.detail);
 });
 document.getElementById('lensHighlights').addEventListener('click',e=>{ const d=e.target.closest('[data-detail]'); if(d) openDetail(d.dataset.detail); });
+document.getElementById('colBtn').onclick=()=>{ S.ex.pickerOpen=!S.ex.pickerOpen; renderLensView(); };
+document.getElementById('colPanel').addEventListener('change',e=>{ const cb=e.target.closest('[data-col]'); if(!cb)return; toggleCol(LENS_BY_ID[S.lens], cb.dataset.col); });
+document.getElementById('colPanel').addEventListener('click',e=>{ if(e.target.id==='colReset') resetCols(LENS_BY_ID[S.lens]); else if(e.target.id==='colDone'){ S.ex.pickerOpen=false; renderLensView(); } });
 
 // ================= BOOT =================
 document.getElementById('foot').innerHTML =
