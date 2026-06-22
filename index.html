@@ -7,7 +7,7 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
 :root { --ink:#16263a; --ink-soft:#5a6b7e; --line:#e3e6ea; --paper:#f6f7f9; --card:#fff;
-  --green:#2e7d5b; --green-soft:#e8f2ec; --hover:#f0f6f3; --two:#9e2a2b; --four:#2a6f97;
+  --green:#1c4f8f; --green-soft:#e7eef8; --hover:#eef3fb; --gold:#f2b417; --pin-bg:#eaf1fb; --two:#9e2a2b; --four:#2a6f97;
   --blue:#2a6f97; --amber:#a9791f; --rust:#9e2a2b; --purple:#7a5195; }
 * { box-sizing:border-box; }
 body { font-family:'Inter',system-ui,sans-serif; color:var(--ink); background:var(--paper); margin:0; -webkit-font-smoothing:antialiased; }
@@ -38,7 +38,7 @@ a { color:inherit; }
 .lens-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:14px; margin-top:18px; }
 .lens-card { text-align:left; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 19px; cursor:pointer; font:inherit; transition:border-color .12s, box-shadow .12s; }
 .lens-card:hover { border-color:var(--green); box-shadow:0 3px 14px rgba(22,38,58,.07); }
-.lens-num { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--green); font-weight:500; }
+.lens-num { font-family:'IBM Plex Mono',monospace; font-size:12px; color:#b8860b; font-weight:500; }
 .lens-card h3 { font-family:'Fraunces',serif; font-weight:600; font-size:19px; margin:6px 0 8px; color:var(--ink); }
 .lens-card p { margin:0; font-size:13px; color:var(--ink-soft); line-height:1.5; }
 .lens-card .two-q { margin-top:11px; padding-top:11px; border-top:1px solid var(--line); font-size:12px; line-height:1.5; }
@@ -87,7 +87,7 @@ select.f { font:inherit; font-size:13.5px; padding:9px 11px; border:1px solid va
 .top5-title span { color:var(--ink-soft); font-weight:400; font-size:13px; }
 .top5 { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:11px; }
 .t5card { display:flex; gap:11px; border:1px solid var(--line); border-radius:12px; padding:13px 14px; background:#fff; }
-.t5rank { font-family:'Fraunces',serif; font-weight:600; font-size:20px; color:var(--green); line-height:1; flex:none; width:18px; }
+.t5rank { font-family:'Fraunces',serif; font-weight:600; font-size:20px; color:#b8860b; line-height:1; flex:none; width:18px; }
 .t5name { font-weight:600; font-size:13.5px; line-height:1.25; margin-bottom:6px; cursor:pointer; }
 .t5name:hover { color:var(--green); }
 .t5stats { font-size:12px; color:var(--ink-soft); line-height:1.5; font-variant-numeric:tabular-nums; }
@@ -95,8 +95,8 @@ select.f { font:inherit; font-size:13.5px; padding:9px 11px; border:1px solid va
 .t5empty { grid-column:1/-1; font-size:13px; color:var(--ink-soft); border:1px dashed #cdd3d9; border-radius:12px; padding:18px; text-align:center; }
 
 .pill { display:inline-block; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:11px; color:#fff; letter-spacing:.02em; vertical-align:middle; }
-.pill.Strong { background:var(--green); } .pill.Good { background:var(--blue); }
-.pill.Fair { background:var(--amber); } .pill.Caution { background:var(--rust); }
+.pill.Strong { background:#2e7d5b; } .pill.Good { background:#3a7ca5; }
+.pill.Fair { background:#c79320; } .pill.Caution { background:#9e2a2b; }
 
 /* tables (shared) */
 .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:#fff; }
@@ -109,8 +109,8 @@ tbody tr { border-bottom:1px solid #f0f2f4; }
 tbody tr:hover { background:var(--hover); }
 tr.grouprow td { background:#eef1f3; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); padding:7px 10px; }
 tr.grouprow.pin td { background:var(--green-soft); color:var(--green); }
-tbody tr.pinned-row { background:#f3f8f5; }
-tbody tr.pinned-row:hover { background:#e9f3ec; }
+tbody tr.pinned-row { background:var(--pin-bg); }
+tbody tr.pinned-row:hover { background:#dfeafa; }
 td { padding:10px; white-space:nowrap; font-variant-numeric:tabular-nums; }
 td.num { text-align:right; } td.hero { font-weight:600; color:var(--green); }
 .td-name { font-weight:500; }
@@ -148,6 +148,16 @@ td.num { text-align:right; } td.hero { font-weight:600; color:var(--green); }
 .col-check { display:block; font-size:12.5px; color:var(--ink); padding:2px 0; cursor:pointer; line-height:1.4; }
 .col-check input { accent-color:var(--green); margin-right:6px; vertical-align:middle; }
 .col-check.locked { color:var(--ink-soft); cursor:default; }
+tbody td.td-star { position:sticky; left:0; z-index:1; background:#fff; }
+tbody td.td-name { position:sticky; left:34px; z-index:1; background:#fff; }
+thead th.th-star { position:sticky; left:0; z-index:3; background:#fff; }
+thead th.col-name-h { position:sticky; left:34px; z-index:3; background:#fff; }
+tbody tr:hover td.td-star, tbody tr:hover td.td-name { background:var(--hover); }
+tbody tr.pinned-row td.td-star, tbody tr.pinned-row td.td-name { background:var(--pin-bg); }
+.topbar-right { display:flex; align-items:center; gap:13px; flex-wrap:wrap; }
+.startover { font:inherit; font-size:12.5px; font-weight:500; color:var(--ink-soft); background:none; border:1px solid var(--line); border-radius:8px; padding:7px 12px; cursor:pointer; }
+.startover:hover { color:var(--green); border-color:var(--green); }
+th[title], .col-check[title] { cursor:help; }
 footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-soft); line-height:1.6; }
 @media (max-width:640px){ .landing-h1{font-size:28px;} .section-h1{font-size:23px;} .search{flex-basis:100%;} }
 </style>
@@ -157,9 +167,12 @@ footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); fo
 
   <div class="topbar">
     <div class="mark">Persist, for Student Leadership Network</div>
-    <div class="tabs">
-      <button class="tab" id="tabFind">Find a college</button>
-      <button class="tab" id="tabExplore">Explore the data</button>
+    <div class="topbar-right">
+      <div class="tabs">
+        <button class="tab" id="tabFind">Find a college</button>
+        <button class="tab" id="tabExplore">Explore the data</button>
+      </div>
+      <button class="startover" id="startOver">Start over</button>
     </div>
   </div>
 
@@ -178,7 +191,7 @@ footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); fo
           <h1 class="section-h1" id="findTitle"></h1>
           <p class="section-sub">Sorted by Fit. Star a school to pin it; pins and filters follow you into Explore. Click any school name for its full profile.</p>
         </div>
-        <button class="change-state" id="changeState">Start over</button>
+        <button class="change-state" id="changeState">Change states</button>
       </div>
 
       <div class="top5-wrap">
@@ -373,6 +386,67 @@ const F = {
   zip:{l:'ZIP',f:strf,g:'where'},
   locale_code:{l:'Setting',f:localef,g:'where'},
 };
+const DESC = {
+  size:'Number of undergraduates enrolled.',
+  admission_rate:'Share of applicants who are admitted. "Open" means nearly everyone is accepted.',
+  pell_share:'Share of students who receive a federal Pell Grant, the standard marker for lower-income students.',
+  grad_low_income:'Share of Pell-eligible (lower-income) students who finish a degree. The outcome that matters most for equity.',
+  grad_all:'Share of all students who finish a degree.',
+  equity_gap:'How far the Pell graduation rate trails the overall rate. A positive number means lower-income students graduate less often.',
+  retention:'Share of first-year students who return for a second year. An early sign of whether students stay.',
+  tuition_in_state:'Published yearly tuition for state residents, before aid.',
+  tuition_out_state:'Published yearly tuition for out-of-state students, before aid.',
+  cost_attendance:'Full yearly cost including tuition, fees, housing, and books, before aid.',
+  net_price_low_income:'What a family earning under $30,000 actually pays per year after grants and scholarships. "$0" means aid covers the full cost.',
+  net_price_30_48k:'Yearly cost after aid for a family earning $30,000 to $48,000.',
+  net_price_48_75k:'Yearly cost after aid for a family earning $48,000 to $75,000.',
+  net_price_75_110k:'Yearly cost after aid for a family earning $75,000 to $110,000.',
+  net_price_110k_plus:'Yearly cost after aid for a family earning more than $110,000.',
+  net_price_avg:'Average yearly cost after aid across all students.',
+  debt_grad:'Median federal loan debt of students who graduated.',
+  debt_noncomplete:'Median federal loan debt of students who left without finishing. Debt with no degree is the worst outcome.',
+  debt_monthly:'Estimated monthly loan payment for a typical graduate on a standard repayment plan.',
+  debt_income_0_30k:'Median debt for graduates from families earning under $30,000.',
+  debt_income_30_75k:'Median debt for graduates from families earning $30,000 to $75,000.',
+  debt_income_75k_plus:'Median debt for graduates from families earning more than $75,000.',
+  debt_pell:'Median debt for students who received a Pell Grant.',
+  debt_no_pell:'Median debt for students who did not receive a Pell Grant.',
+  debt_firstgen:'Median debt for first-generation college students.',
+  debt_not_firstgen:'Median debt for students whose parents attended college.',
+  debt_female:'Median debt for women.',
+  debt_male:'Median debt for men.',
+  loan_rate_fed:'Share of students who take out federal student loans.',
+  loan_rate_any:'Share of students who take out any student loan.',
+  loan_principal:'Average amount borrowed.',
+  debt_p10:'Debt level below which the lowest-borrowing 10% of students fall.',
+  debt_p25:'Debt level below which the lowest-borrowing 25% fall.',
+  debt_p75:'Three quarters of students owe less than this; a quarter owe more.',
+  debt_p90:'Nine in ten students owe less than this; the highest-borrowing 10% owe more.',
+  debt_parent_plus:'Median Parent PLUS loan debt taken on by parents to help pay.',
+  debt_borrower_count:'Number of students the debt figures are based on.',
+  earn_10yr:'Median earnings of students 10 years after they first enrolled, including those who did not finish.',
+  earn_6yr:'Median earnings of students 6 years after they first enrolled.',
+  earn_grad_1yr:'Median earnings one year after graduating.',
+  earn_grad_4yr:'Median earnings four years after graduating.',
+  earn_above_hs_share:'Share of former students earning more than a typical high-school graduate (about $36,000).',
+  earn_hs_benchmark:'The typical earnings of a high-school graduate, used as the comparison point.',
+  earn_low_income:'Median earnings of students who came from lower-income families. Shows whether the payoff reaches them.',
+  earn_high_income:'Median earnings of students who came from higher-income families.',
+  earn_male:'Median earnings of men 10 years after entry.',
+  earn_nonmale:'Median earnings of women 10 years after entry.',
+  sat_avg:'Average SAT score of admitted students, where reported.',
+  act_mid:'Midpoint ACT score of admitted students, where reported.',
+  med_family_income:'Median family income of the students who attend.',
+  first_gen:'Share of students who are the first in their family to attend college.',
+  race_white:'Share of students who are White.',
+  race_black:'Share of students who are Black.',
+  race_hispanic:'Share of students who are Hispanic.',
+  race_asian:'Share of students who are Asian.',
+  state:'U.S. state where the school is located.',
+  city:'City where the school is located.',
+  zip:'Postal ZIP code of the school.',
+  locale_code:'Whether the campus is in a city, suburb, town, or rural area.',
+};
 const fmt = (k,v) => (F[k] ? F[k].f(v) : (v==null?NA:esc(v)));
 const isNum = k => F[k] && F[k].f!==strf && F[k].f!==localef;
 
@@ -533,6 +607,23 @@ function setMode(m){
   writeURL();
   window.scrollTo(0,0);
 }
+function startOver(){
+  S.mode='find'; S.lens=null;
+  S.f={ states:[], level:'All', sector:'All', q:'' };
+  S.saved=new Set();
+  S.findEntered=false;
+  S.find={ maxPrice:40000, minGrad:0, sortKey:'fit', sortDir:'desc' };
+  S.ex={ sortKey:null, sortDir:'desc', cols:{}, pickerOpen:false };
+  document.getElementById('tabFind').classList.add('on');
+  document.getElementById('tabExplore').classList.remove('on');
+  document.getElementById('findMode').style.display='block';
+  document.getElementById('exploreMode').style.display='none';
+  document.getElementById('findApp').style.display='none';
+  document.getElementById('landing').style.display='block';
+  document.getElementById('landingState').value='';
+  history.replaceState(null,'',location.pathname);
+  window.scrollTo(0,0);
+}
 function renderCurrent(){
   if(S.mode==='find'){ if(S.findEntered || S.f.states.length) renderFindApp(); else renderFind(); }
   else { if(S.lens) renderLensView(); else renderLensMenu(); }
@@ -540,6 +631,7 @@ function renderCurrent(){
 }
 document.getElementById('tabFind').onclick = ()=>setMode('find');
 document.getElementById('tabExplore').onclick = ()=>setMode('explore');
+document.getElementById('startOver').onclick = startOver;
 
 // ================= FIND MODE =================
 document.getElementById('landingFoot').textContent =
@@ -598,9 +690,9 @@ function findRow(s){
 function findHeadHtml(){
   const arr = k => S.find.sortKey===k ? '<span class="arrow">'+(S.find.sortDir==='asc'?'\u25B2':'\u25BC')+'</span>' : '';
   let h='<th class="th-star"></th>';
-  h+='<th class="'+(S.find.sortKey==='name'?'sorted':'')+'" data-sort="name">School '+arr('name')+'</th>';
+  h+='<th class="col-name-h '+(S.find.sortKey==='name'?'sorted':'')+'" data-sort="name">School '+arr('name')+'</th>';
   h+='<th class="'+(S.find.sortKey==='fit'?'sorted':'')+'" data-sort="fit">Fit '+arr('fit')+'</th>';
-  h+=FIND_COLS.map(c=>'<th class="'+(c.num?'num ':'')+(c.hero?'hero ':'')+(S.find.sortKey===c.key?'sorted':'')+'" data-sort="'+c.key+'">'+c.label+' '+arr(c.key)+'</th>').join('');
+  h+=FIND_COLS.map(c=>'<th class="'+(c.num?'num ':'')+(c.hero?'hero ':'')+(S.find.sortKey===c.key?'sorted':'')+'" title="'+esc(DESC[c.key]||'')+'" data-sort="'+c.key+'">'+c.label+' '+arr(c.key)+'</th>').join('');
   return h;
 }
 function renderFindTop5(filtered){
@@ -684,7 +776,7 @@ function renderColPanel(L){
     if(!keys.length) continue;
     html+='<div class="col-group"><div class="col-group-h">'+glabel+'</div>';
     html+=keys.map(k=>{ const on=active.has(k); const locked=(k===L.metric);
-      return '<label class="col-check'+(locked?' locked':'')+'"><input type="checkbox" data-col="'+k+'"'+(on?' checked':'')+(locked?' disabled':'')+'>'+esc(F[k].l)+(locked?' (key metric)':'')+'</label>';
+      return '<label class="col-check'+(locked?' locked':'')+'" title="'+esc(DESC[k]||'')+'"><input type="checkbox" data-col="'+k+'"'+(on?' checked':'')+(locked?' disabled':'')+'>'+esc(F[k].l)+(locked?' (key metric)':'')+'</label>';
     }).join('');
     html+='</div>';
   }
@@ -722,9 +814,9 @@ function exHeadHtml(L){
   const x=S.ex;
   const arr=k=>x.sortKey===k?'<span class="arrow">'+(x.sortDir==='asc'?'\u25B2':'\u25BC')+'</span>':'';
   let h='<th class="th-star"></th>';
-  h+='<th class="'+(x.sortKey==='name'?'sorted':'')+'" data-sort="name">School '+arr('name')+'</th>';
+  h+='<th class="col-name-h '+(x.sortKey==='name'?'sorted':'')+'" data-sort="name">School '+arr('name')+'</th>';
   h+=activeCols(L).map(k=>{ const hero=(k===L.metric);
-    return '<th class="'+(isNum(k)?'num ':'')+(hero?'hero ':'')+(x.sortKey===k?'sorted':'')+'" data-sort="'+k+'">'+esc(F[k]?F[k].l:k)+' '+arr(k)+'</th>'; }).join('');
+    return '<th class="'+(isNum(k)?'num ':'')+(hero?'hero ':'')+(x.sortKey===k?'sorted':'')+'" title="'+esc(DESC[k]||'')+'" data-sort="'+k+'">'+esc(F[k]?F[k].l:k)+' '+arr(k)+'</th>'; }).join('');
   return h;
 }
 function exRow(s,L){
