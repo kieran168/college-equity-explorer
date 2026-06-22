@@ -168,7 +168,7 @@ footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); fo
       <div class="section-head" style="display:flex; justify-content:space-between; align-items:flex-end; gap:16px;">
         <div>
           <h1 class="section-h1" id="findTitle"></h1>
-          <p class="section-sub">Sorted by Fit. Star a school to pin it on top for comparison. Click any school name for its full profile.</p>
+          <p class="section-sub">Sorted by Fit. Star a school to pin it; pins and filters follow you into Explore. Click any school name for its full profile.</p>
         </div>
         <button class="change-state" id="changeState">Start over</button>
       </div>
@@ -237,13 +237,22 @@ footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); fo
         <p class="section-sub" id="lensSub"></p>
       </div>
 
+      <div class="statebox">
+        <span class="statebox-label">States:</span>
+        <span id="exChips"></span>
+        <select class="f" id="exAddState"></select>
+      </div>
+
       <section class="filters">
         <input class="search" id="exSearch" placeholder="Search school name...">
-        <select class="f" id="exState"></select>
         <select class="f" id="exLevel">
           <option value="All">2-year and 4-year</option>
           <option value="4-year">4-year only</option>
           <option value="2-year (community)">2-year only</option>
+        </select>
+        <select class="f" id="exSector">
+          <option value="All">All sectors</option><option>Public</option>
+          <option>Private nonprofit</option><option>Private for-profit</option>
         </select>
       </section>
 
@@ -252,6 +261,8 @@ footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); fo
       <div class="bar">
         <span class="count" id="exCount"></span>
         <div class="bar-right">
+          <span class="pininfo" id="exPinInfo"></span>
+          <button class="reset" id="exClearPins" style="display:none">Clear pins</button>
           <button class="reset" id="exReset">Clear filters</button>
         </div>
       </div>
@@ -279,7 +290,6 @@ const TONE = {Public:'#2a6f97','Private nonprofit':'#7a5195','Private for-profit
 const NA = 'n/a';
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-// ---------- formatters ----------
 const money    = v => v==null ? NA : '$'+Math.round(v).toLocaleString('en-US');
 const moneyNet = v => v==null ? NA : (v<=0 ? '$0' : '$'+Math.round(v).toLocaleString('en-US'));
 const pctf     = v => v==null ? NA : Math.round(v*100)+'%';
@@ -291,7 +301,6 @@ const localef  = v => { if(v==null) return NA; const d=Math.floor(v/10);
   return d===1?'City':d===2?'Suburb':d===3?'Town':d===4?'Rural':'n/a'; };
 const strf     = v => v==null ? NA : esc(v);
 
-// ---------- field dictionary (label + formatter + group) ----------
 const F = {
   size:{l:'Students',f:numf,g:'core'},
   admission_rate:{l:'Admit rate',f:admitf,g:'admit'},
@@ -353,8 +362,8 @@ const F = {
   locale_code:{l:'Setting',f:localef,g:'where'},
 };
 const fmt = (k,v) => (F[k] ? F[k].f(v) : (v==null?NA:esc(v)));
+const isNum = k => F[k] && F[k].f!==strf && F[k].f!==localef;
 
-// ---------- the six lenses ----------
 const LENSES = [
   { id:'cost', n:'01', title:'What it costs',
     blurb:'Sticker price next to what families actually pay, by income.',
@@ -395,7 +404,6 @@ const LENSES = [
 const LENS_BY_ID = Object.fromEntries(LENSES.map(l=>[l.id,l]));
 const GROUP_ORDER = [['cost','Cost'],['out','Graduation'],['debt','Debt'],['earn','Earnings'],['admit','Getting in'],['who','Who goes here'],['where','Where it is']];
 
-// ---------- shared helpers ----------
 const states = Array.from(new Set(SCHOOLS.map(s=>s.state))).sort();
 const lvlBadge = s => s.level.charAt(0)==='2' ? '<span class="lvl two">2-yr</span>' : '<span class="lvl four">4-yr</span>';
 const byName = {}; SCHOOLS.forEach(s=>{ byName[s.name]=s; });
@@ -406,17 +414,16 @@ function sortBy(arr,key,dir){
     if(typeof av==='string') return av.localeCompare(bv)*d; return (av-bv)*d; });
 }
 
-// =================================================================
-// STATE
-// =================================================================
+// ================= SHARED STATE =================
 const S = {
-  mode:'find',
-  find:{ states:[], q:'', level:'All', sector:'All', maxPrice:40000, minGrad:0, sortKey:'fit', sortDir:'desc', saved:new Set() },
-  lens:null,
-  ex:{ q:'', state:'All', level:'All', sortKey:null, sortDir:'desc' },
+  mode:'find', lens:null,
+  f:{ states:[], level:'All', sector:'All', q:'' },   // SHARED filters (follow you everywhere)
+  saved:new Set(),                                     // SHARED pins (follow you everywhere)
+  findEntered:false,
+  find:{ maxPrice:40000, minGrad:0, sortKey:'fit', sortDir:'desc' },
+  ex:{ sortKey:null, sortDir:'desc' },
 };
 
-// ---------- Fit (find mode) ----------
 const afford = p => Math.max(0, Math.min(1, (25000 - p)/25000));
 const fitScore = s => 70*s.grad_low_income + 30*afford(s.net_price_low_income);
 function fitTier(s){
@@ -426,27 +433,22 @@ function fitTier(s){
 }
 const fitVal = s => (s.grad_low_income < 0.35 ? -1 : fitScore(s));
 
-// =================================================================
-// URL sync
-// =================================================================
+// ================= URL SYNC (shared filters + pins) =================
 const LVL_W={'4-year':'4yr','2-year (community)':'2yr'}, LVL_R={'4yr':'4-year','2yr':'2-year (community)'};
 const SEC_W={'Public':'pub','Private nonprofit':'np','Private for-profit':'fp'}, SEC_R={'pub':'Public','np':'Private nonprofit','fp':'Private for-profit'};
 function writeURL(){
-  const p=new URLSearchParams();
+  const p=new URLSearchParams(), f=S.f;
   p.set('mode', S.mode);
   if(S.mode==='explore' && S.lens) p.set('lens', S.lens);
-  if(S.mode==='find'){
-    p.set('st', S.find.states.length? S.find.states.join(',') : 'all');
-    const f=S.find;
-    if(f.q) p.set('q', f.q);
-    if(LVL_W[f.level]) p.set('lvl', LVL_W[f.level]);
-    if(SEC_W[f.sector]) p.set('sec', SEC_W[f.sector]);
-    if(f.maxPrice!==40000) p.set('cost', f.maxPrice);
-    if(f.minGrad>0) p.set('grad', Math.round(f.minGrad*100));
-    if(f.sortKey!=='fit') p.set('sort', f.sortKey);
-    if(f.sortDir!=='desc') p.set('dir', f.sortDir);
-    if(f.saved.size) p.set('pin', [...f.saved].map(encodeURIComponent).join('~'));
-  }
+  p.set('st', f.states.length? f.states.join(',') : 'all');
+  if(f.q) p.set('q', f.q);
+  if(LVL_W[f.level]) p.set('lvl', LVL_W[f.level]);
+  if(SEC_W[f.sector]) p.set('sec', SEC_W[f.sector]);
+  if(S.find.maxPrice!==40000) p.set('cost', S.find.maxPrice);
+  if(S.find.minGrad>0) p.set('grad', Math.round(S.find.minGrad*100));
+  if(S.find.sortKey!=='fit') p.set('sort', S.find.sortKey);
+  if(S.find.sortDir!=='desc') p.set('dir', S.find.sortDir);
+  if(S.saved.size) p.set('pin', [...S.saved].map(encodeURIComponent).join('~'));
   history.replaceState(null,'','?'+p.toString());
 }
 function readURL(){
@@ -454,48 +456,60 @@ function readURL(){
   if(![...p.keys()].length) return;
   S.mode = p.get('mode')==='explore' ? 'explore' : 'find';
   if(S.mode==='explore'){ const l=p.get('lens'); if(l && LENS_BY_ID[l]) S.lens=l; }
-  const st=p.get('st');
-  if(st!=null){
-    const f=S.find;
-    f.states = (st==='all')? [] : st.split(',').filter(Boolean);
-    f.q=p.get('q')||''; f.level=LVL_R[p.get('lvl')]||'All'; f.sector=SEC_R[p.get('sec')]||'All';
-    f.maxPrice=p.get('cost')? +p.get('cost'):40000; f.minGrad=p.get('grad')? (+p.get('grad'))/100:0;
-    f.sortKey=p.get('sort')||'fit'; f.sortDir=p.get('dir')||'desc';
-    const pin=p.get('pin'); if(pin) pin.split('~').forEach(n=>f.saved.add(decodeURIComponent(n)));
-    f._entered = true;
-  }
+  const f=S.f, st=p.get('st');
+  if(st!=null){ f.states = (st==='all')? [] : st.split(',').filter(Boolean); }
+  f.q=p.get('q')||''; f.level=LVL_R[p.get('lvl')]||'All'; f.sector=SEC_R[p.get('sec')]||'All';
+  S.find.maxPrice=p.get('cost')? +p.get('cost'):40000; S.find.minGrad=p.get('grad')? (+p.get('grad'))/100:0;
+  S.find.sortKey=p.get('sort')||'fit'; S.find.sortDir=p.get('dir')||'desc';
+  const pin=p.get('pin'); if(pin) pin.split('~').forEach(n=>S.saved.add(decodeURIComponent(n)));
+  if(S.mode==='find') S.findEntered=true;
 }
 
-// =================================================================
-// DETAIL MODAL
-// =================================================================
+// ================= SHARED STATE CHIPS =================
+function renderChips(chipId, addId){
+  const box=document.getElementById(chipId), f=S.f;
+  if(!box) return;
+  if(f.states.length===0) box.innerHTML='<span class="schip allchip">All states</span>';
+  else box.innerHTML=f.states.map(st=>'<span class="schip">'+st+' <button data-rm="'+st+'" aria-label="remove '+st+'">\u00D7</button></span>').join('');
+  const add=document.getElementById(addId);
+  if(add) add.innerHTML='<option value="">+ add state</option>'+states.filter(s=>!f.states.includes(s)).map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+}
+function addStateFrom(sel){ const v=sel.value; if(!v) return; if(!S.f.states.includes(v)) S.f.states.push(v); renderCurrent(); }
+function removeStateFrom(e){ const b=e.target.closest('[data-rm]'); if(!b) return; S.f.states=S.f.states.filter(x=>x!==b.dataset.rm); renderCurrent(); }
+
+// ================= DETAIL MODAL =================
+let currentDetail = null;
+function detailPinBtnHtml(name){ const on=S.saved.has(name);
+  return '<button class="linkbtn" id="modalPin">'+(on?'\u2605 Pinned':'\u2606 Pin to compare')+'</button>'; }
 function openDetail(name){
   const s = byName[name]; if(!s) return;
-  const meta = [s.level, s.sector, [s.city,s.state].filter(Boolean).join(', ')].filter(Boolean).join('  ·  ');
+  currentDetail = name;
+  const meta = [s.level, s.sector, [s.city,s.state].filter(Boolean).join(', ')].filter(Boolean).join('   \u00B7   ');
   let groups = '';
   for(const [gid,glabel] of GROUP_ORDER){
     const keys = Object.keys(F).filter(k=>F[k].g===gid);
-    const rows = keys.map(k=>{
-      const v = s[k]; if(v===undefined) return '';
-      return '<div class="drow"><span class="dl">'+esc(F[k].l)+'</span><span class="dv">'+fmt(k,v)+'</span></div>';
-    }).join('');
+    const rows = keys.map(k=>{ const v=s[k]; if(v===undefined) return '';
+      return '<div class="drow"><span class="dl">'+esc(F[k].l)+'</span><span class="dv">'+fmt(k,v)+'</span></div>'; }).join('');
     if(rows.trim()) groups += '<div class="dgroup"><h4>'+glabel+'</h4>'+rows+'</div>';
   }
   document.getElementById('modal').innerHTML =
     '<div class="modal-top"><div><h2 class="modal-name">'+esc(s.name)+'</h2>'+
-    '<p class="modal-meta">'+esc(meta)+'</p></div>'+
-    '<button class="modal-close" id="modalClose" aria-label="Close">&times;</button></div>'+
+    '<p class="modal-meta">'+esc(meta)+'</p><div style="margin-top:10px">'+detailPinBtnHtml(name)+'</div></div>'+
+    '<button class="modal-close" id="modalClose" aria-label="Close">\u00D7</button></div>'+
     '<div class="dgroups">'+groups+'</div>';
   document.getElementById('modalBg').classList.add('open');
   document.getElementById('modalClose').onclick = closeDetail;
+  document.getElementById('modalPin').onclick = ()=>{
+    if(S.saved.has(name)) S.saved.delete(name); else S.saved.add(name);
+    const b=document.getElementById('modalPin'); b.innerHTML = S.saved.has(name)?'\u2605 Pinned':'\u2606 Pin to compare';
+    renderCurrent();
+  };
 }
-function closeDetail(){ document.getElementById('modalBg').classList.remove('open'); }
+function closeDetail(){ document.getElementById('modalBg').classList.remove('open'); currentDetail=null; }
 document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id==='modalBg') closeDetail(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDetail(); });
 
-// =================================================================
-// MODE SWITCHING
-// =================================================================
+// ================= MODE SWITCHING =================
 function setMode(m){
   S.mode = m;
   document.getElementById('tabFind').classList.toggle('on', m==='find');
@@ -506,12 +520,15 @@ function setMode(m){
   writeURL();
   window.scrollTo(0,0);
 }
+function renderCurrent(){
+  if(S.mode==='find'){ if(S.findEntered || S.f.states.length) renderFindApp(); else renderFind(); }
+  else { if(S.lens) renderLensView(); else renderLensMenu(); }
+  writeURL();
+}
 document.getElementById('tabFind').onclick = ()=>setMode('find');
 document.getElementById('tabExplore').onclick = ()=>setMode('explore');
 
-// =================================================================
-// FIND MODE
-// =================================================================
+// ================= FIND MODE =================
 document.getElementById('landingFoot').textContent =
   'Data: U.S. Department of Education College Scorecard. '+SCHOOLS.length.toLocaleString()+' colleges. Published June 2026.';
 document.getElementById('landingState').innerHTML =
@@ -527,62 +544,55 @@ const FIND_COLS = [
   {key:'grad_all',label:'Overall grad',num:true},
   {key:'equity_gap',label:'Equity gap',num:true},
 ];
-function findTitle(){ document.getElementById('findTitle').textContent = S.find.states.length ? S.find.states.join(', ') : 'All states'; }
+function findTitle(){ document.getElementById('findTitle').textContent = S.f.states.length ? S.f.states.join(', ') : 'All states'; }
 function syncFindControls(){
-  const f=S.find;
+  const f=S.f;
   document.getElementById('q').value=f.q;
   document.getElementById('level').value=f.level;
   document.getElementById('sector').value=f.sector;
-  document.getElementById('price').value=f.maxPrice; document.getElementById('priceLbl').textContent=money(f.maxPrice);
-  document.getElementById('grad').value=f.minGrad; document.getElementById('gradLbl').textContent=pctf(f.minGrad);
-}
-function renderFindChips(){
-  const box=document.getElementById('stateChips'), f=S.find;
-  if(f.states.length===0) box.innerHTML='<span class="schip allchip">All states</span>';
-  else box.innerHTML=f.states.map(st=>'<span class="schip">'+st+' <button data-rm="'+st+'" aria-label="remove '+st+'">&times;</button></span>').join('');
-  document.getElementById('addState').innerHTML='<option value="">+ add state</option>'+states.filter(s=>!f.states.includes(s)).map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+  document.getElementById('price').value=S.find.maxPrice; document.getElementById('priceLbl').textContent=money(S.find.maxPrice);
+  document.getElementById('grad').value=S.find.minGrad; document.getElementById('gradLbl').textContent=pctf(S.find.minGrad);
+  renderChips('stateChips','addState');
 }
 function findFiltered(){
-  const f=S.find;
+  const f=S.f;
   return SCHOOLS.filter(s =>
     s.name.toLowerCase().includes(f.q.toLowerCase()) &&
     (f.states.length===0||f.states.includes(s.state)) &&
     (f.sector==='All'||s.sector===f.sector) &&
     (f.level==='All'||s.level===f.level) &&
-    s.net_price_low_income<=f.maxPrice &&
-    s.grad_low_income>=f.minGrad);
+    s.net_price_low_income<=S.find.maxPrice &&
+    s.grad_low_income>=S.find.minGrad);
 }
 function findCmp(a,b){
-  const f=S.find, d=f.sortDir==='asc'?1:-1;
-  if(f.sortKey==='fit') return (fitVal(a)-fitVal(b))*d;
-  const av=a[f.sortKey],bv=b[f.sortKey];
+  const d=S.find.sortDir==='asc'?1:-1, k=S.find.sortKey;
+  if(k==='fit') return (fitVal(a)-fitVal(b))*d;
+  const av=a[k],bv=b[k];
   if(av==null)return 1; if(bv==null)return -1;
   if(typeof av==='string')return av.localeCompare(bv)*d; return (av-bv)*d;
 }
 function findRow(s){
-  const f=S.find;
   const tds = FIND_COLS.map(c=>{
     const t=(c.key==='net_price_low_income'&&s[c.key]<=0)?' title="Aid meets or exceeds cost of attendance"':'';
     return '<td class="'+(c.num?'num ':'')+(c.hero?'hero':'')+'"'+t+'>'+fmt(c.key,s[c.key])+'</td>';
   }).join('');
-  const tier=fitTier(s), on=f.saved.has(s.name);
+  const tier=fitTier(s), on=S.saved.has(s.name);
   return '<tr class="'+(on?'pinned-row':'')+'">'+
     '<td class="td-star"><button class="star'+(on?' on':'')+'" data-name="'+esc(s.name)+'" title="'+(on?'Unpin':'Pin to top')+'">'+(on?'\u2605':'\u2606')+'</button></td>'+
     '<td class="td-name"><span class="dot" style="background:'+(TONE[s.sector]||'#999')+'"></span><span class="name-link" data-detail="'+esc(s.name)+'">'+esc(s.name)+'</span>'+lvlBadge(s)+'</td>'+
     '<td><span class="pill '+tier+'">'+tier+'</span></td>'+tds+'</tr>';
 }
 function findHeadHtml(){
-  const f=S.find;
-  const arr = k => f.sortKey===k ? '<span class="arrow">'+(f.sortDir==='asc'?'\u25B2':'\u25BC')+'</span>' : '';
+  const arr = k => S.find.sortKey===k ? '<span class="arrow">'+(S.find.sortDir==='asc'?'\u25B2':'\u25BC')+'</span>' : '';
   let h='<th class="th-star"></th>';
-  h+='<th class="'+(f.sortKey==='name'?'sorted':'')+'" data-sort="name">School '+arr('name')+'</th>';
-  h+='<th class="'+(f.sortKey==='fit'?'sorted':'')+'" data-sort="fit">Fit '+arr('fit')+'</th>';
-  h+=FIND_COLS.map(c=>'<th class="'+(c.num?'num ':'')+(c.hero?'hero ':'')+(f.sortKey===c.key?'sorted':'')+'" data-sort="'+c.key+'">'+c.label+' '+arr(c.key)+'</th>').join('');
+  h+='<th class="'+(S.find.sortKey==='name'?'sorted':'')+'" data-sort="name">School '+arr('name')+'</th>';
+  h+='<th class="'+(S.find.sortKey==='fit'?'sorted':'')+'" data-sort="fit">Fit '+arr('fit')+'</th>';
+  h+=FIND_COLS.map(c=>'<th class="'+(c.num?'num ':'')+(c.hero?'hero ':'')+(S.find.sortKey===c.key?'sorted':'')+'" data-sort="'+c.key+'">'+c.label+' '+arr(c.key)+'</th>').join('');
   return h;
 }
 function renderFindTop5(filtered){
   const top=filtered.slice().sort((a,b)=>b.grad_low_income-a.grad_low_income).slice(0,5);
-  const where=S.find.states.length?S.find.states.join(', '):'nationwide';
+  const where=S.f.states.length?S.f.states.join(', '):'nationwide';
   document.getElementById('top5Title').innerHTML='Best for Pell-eligible students in '+esc(where)+' <span>(highest graduation rate among Pell-eligible students)</span>';
   const box=document.getElementById('top5');
   if(!top.length){ box.innerHTML='<div class="t5empty">No schools match the current filters.</div>'; return; }
@@ -592,15 +602,14 @@ function renderFindTop5(filtered){
   }).join('');
 }
 function renderFindApp(){
-  const f=S.find;
   document.getElementById('landing').style.display='none';
   document.getElementById('findApp').style.display='block';
-  syncFindControls(); renderFindChips(); findTitle();
+  syncFindControls(); findTitle();
   const filtered=findFiltered().sort(findCmp);
   renderFindTop5(filtered);
   document.getElementById('findHead').innerHTML=findHeadHtml();
-  const pinned=SCHOOLS.filter(s=>f.saved.has(s.name)).sort(findCmp);
-  const others=filtered.filter(s=>!f.saved.has(s.name));
+  const pinned=SCHOOLS.filter(s=>S.saved.has(s.name)).sort(findCmp);
+  const others=filtered.filter(s=>!S.saved.has(s.name));
   const shown=others.slice(0,ROW_CAP);
   document.getElementById('count').textContent=filtered.length.toLocaleString()+' school'+(filtered.length===1?'':'s')+(others.length>ROW_CAP?(' (showing top '+ROW_CAP+')'):'');
   document.getElementById('pinInfo').textContent=pinned.length?(pinned.length+' pinned'):'';
@@ -616,35 +625,33 @@ function renderFindApp(){
   document.getElementById('findBody').innerHTML=html;
 }
 function renderFind(){
-  if(S.find._entered) renderFindApp();
+  if(S.findEntered || S.f.states.length) renderFindApp();
   else { document.getElementById('landing').style.display='block'; document.getElementById('findApp').style.display='none'; }
 }
-function enterFind(){ S.find._entered=true; renderFindApp(); writeURL(); window.scrollTo(0,0); }
+function enterFind(){ S.findEntered=true; renderFindApp(); writeURL(); window.scrollTo(0,0); }
 
-document.getElementById('landingState').onchange=e=>{ const v=e.target.value; if(!v)return; S.find.states=(v==='ALL')?[]:[v]; enterFind(); };
-document.getElementById('changeState').onclick=()=>{ S.find._entered=false; document.getElementById('findApp').style.display='none'; document.getElementById('landing').style.display='block'; document.getElementById('landingState').value=''; writeURL(); window.scrollTo(0,0); };
-document.getElementById('addState').onchange=e=>{ const v=e.target.value; if(!v)return; if(!S.find.states.includes(v)) S.find.states.push(v); renderFindApp(); writeURL(); };
-document.getElementById('stateChips').addEventListener('click',e=>{ const b=e.target.closest('[data-rm]'); if(!b)return; S.find.states=S.find.states.filter(x=>x!==b.dataset.rm); renderFindApp(); writeURL(); });
-document.getElementById('q').oninput=e=>{ S.find.q=e.target.value; renderFindApp(); writeURL(); };
-document.getElementById('level').onchange=e=>{ S.find.level=e.target.value; renderFindApp(); writeURL(); };
-document.getElementById('sector').onchange=e=>{ S.find.sector=e.target.value; renderFindApp(); writeURL(); };
+document.getElementById('landingState').onchange=e=>{ const v=e.target.value; if(!v)return; S.f.states=(v==='ALL')?[]:[v]; enterFind(); };
+document.getElementById('changeState').onclick=()=>{ S.findEntered=false; S.f.states=[]; document.getElementById('findApp').style.display='none'; document.getElementById('landing').style.display='block'; document.getElementById('landingState').value=''; writeURL(); window.scrollTo(0,0); };
+document.getElementById('addState').onchange=e=>addStateFrom(e.target);
+document.getElementById('stateChips').addEventListener('click', removeStateFrom);
+document.getElementById('q').oninput=e=>{ S.f.q=e.target.value; renderCurrent(); };
+document.getElementById('level').onchange=e=>{ S.f.level=e.target.value; renderCurrent(); };
+document.getElementById('sector').onchange=e=>{ S.f.sector=e.target.value; renderCurrent(); };
 document.getElementById('price').oninput=e=>{ S.find.maxPrice=+e.target.value; document.getElementById('priceLbl').textContent=money(S.find.maxPrice); renderFindApp(); writeURL(); };
 document.getElementById('grad').oninput=e=>{ S.find.minGrad=+e.target.value; document.getElementById('gradLbl').textContent=pctf(S.find.minGrad); renderFindApp(); writeURL(); };
-document.getElementById('reset').onclick=()=>{ const f=S.find; f.q='';f.sector='All';f.level='All';f.maxPrice=40000;f.minGrad=0; renderFindApp(); writeURL(); };
-document.getElementById('clearPins').onclick=()=>{ S.find.saved.clear(); renderFindApp(); writeURL(); };
+document.getElementById('reset').onclick=()=>{ S.f.q='';S.f.sector='All';S.f.level='All';S.find.maxPrice=40000;S.find.minGrad=0; renderFindApp(); writeURL(); };
+document.getElementById('clearPins').onclick=()=>{ S.saved.clear(); renderFindApp(); writeURL(); };
 document.getElementById('copyLink').onclick=()=>{ const b=document.getElementById('copyLink'), o=b.textContent; const done=()=>{b.textContent='Link copied'; setTimeout(()=>{b.textContent=o;},1600);};
   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(location.href).then(done).catch(done); else done(); };
-document.getElementById('findHead').addEventListener('click',e=>{ const th=e.target.closest('[data-sort]'); if(!th)return; const k=th.dataset.sort, f=S.find;
-  if(k===f.sortKey) f.sortDir=f.sortDir==='desc'?'asc':'desc'; else { f.sortKey=k; f.sortDir=(k==='name'||k==='state')?'asc':'desc'; } renderFindApp(); writeURL(); });
+document.getElementById('findHead').addEventListener('click',e=>{ const th=e.target.closest('[data-sort]'); if(!th)return; const k=th.dataset.sort;
+  if(k===S.find.sortKey) S.find.sortDir=S.find.sortDir==='desc'?'asc':'desc'; else { S.find.sortKey=k; S.find.sortDir=(k==='name'||k==='state')?'asc':'desc'; } renderFindApp(); writeURL(); });
 document.getElementById('findBody').addEventListener('click',e=>{
-  const star=e.target.closest('.star'); if(star){ const n=star.dataset.name; if(S.find.saved.has(n)) S.find.saved.delete(n); else S.find.saved.add(n); renderFindApp(); writeURL(); return; }
+  const star=e.target.closest('.star'); if(star){ const n=star.dataset.name; if(S.saved.has(n)) S.saved.delete(n); else S.saved.add(n); renderFindApp(); writeURL(); return; }
   const d=e.target.closest('[data-detail]'); if(d) openDetail(d.dataset.detail);
 });
 document.getElementById('top5').addEventListener('click',e=>{ const d=e.target.closest('[data-detail]'); if(d) openDetail(d.dataset.detail); });
 
-// =================================================================
-// EXPLORE MODE
-// =================================================================
+// ================= EXPLORE MODE =================
 function renderLensMenu(){
   document.getElementById('lensMenu').style.display='block';
   document.getElementById('lensView').style.display='none';
@@ -665,24 +672,29 @@ function openLens(id){
   writeURL(); window.scrollTo(0,0);
 }
 function exFiltered(){
-  const x=S.ex;
+  const f=S.f;
   return SCHOOLS.filter(s =>
-    s.name.toLowerCase().includes(x.q.toLowerCase()) &&
-    (x.state==='All'||s.state===x.state) &&
-    (x.level==='All'||s.level===x.level));
+    s.name.toLowerCase().includes(f.q.toLowerCase()) &&
+    (f.states.length===0||f.states.includes(s.state)) &&
+    (f.level==='All'||s.level===f.level) &&
+    (f.sector==='All'||s.sector===f.sector));
 }
 function exHeadHtml(L){
   const x=S.ex;
   const arr=k=>x.sortKey===k?'<span class="arrow">'+(x.sortDir==='asc'?'\u25B2':'\u25BC')+'</span>':'';
-  let h='<th class="'+(x.sortKey==='name'?'sorted':'')+'" data-sort="name">School '+arr('name')+'</th>';
-  h+=L.cols.map(k=>{ const num=F[k]&&F[k].f!==strf&&F[k].f!==localef; const hero=(k===L.metric);
-    return '<th class="'+(num?'num ':'')+(hero?'hero ':'')+(x.sortKey===k?'sorted':'')+'" data-sort="'+k+'">'+esc(F[k]?F[k].l:k)+' '+arr(k)+'</th>'; }).join('');
+  let h='<th class="th-star"></th>';
+  h+='<th class="'+(x.sortKey==='name'?'sorted':'')+'" data-sort="name">School '+arr('name')+'</th>';
+  h+=L.cols.map(k=>{ const hero=(k===L.metric);
+    return '<th class="'+(isNum(k)?'num ':'')+(hero?'hero ':'')+(x.sortKey===k?'sorted':'')+'" data-sort="'+k+'">'+esc(F[k]?F[k].l:k)+' '+arr(k)+'</th>'; }).join('');
   return h;
 }
 function exRow(s,L){
-  const tds=L.cols.map(k=>{ const num=F[k]&&F[k].f!==strf&&F[k].f!==localef; const hero=(k===L.metric);
-    return '<td class="'+(num?'num ':'')+(hero?'hero':'')+'">'+fmt(k,s[k])+'</td>'; }).join('');
-  return '<tr><td class="td-name"><span class="dot" style="background:'+(TONE[s.sector]||'#999')+'"></span><span class="name-link" data-detail="'+esc(s.name)+'">'+esc(s.name)+'</span>'+lvlBadge(s)+'</td>'+tds+'</tr>';
+  const on=S.saved.has(s.name);
+  const tds=L.cols.map(k=>{ const hero=(k===L.metric);
+    return '<td class="'+(isNum(k)?'num ':'')+(hero?'hero':'')+'">'+fmt(k,s[k])+'</td>'; }).join('');
+  return '<tr class="'+(on?'pinned-row':'')+'">'+
+    '<td class="td-star"><button class="star'+(on?' on':'')+'" data-name="'+esc(s.name)+'" title="'+(on?'Unpin':'Pin to top')+'">'+(on?'\u2605':'\u2606')+'</button></td>'+
+    '<td class="td-name"><span class="dot" style="background:'+(TONE[s.sector]||'#999')+'"></span><span class="name-link" data-detail="'+esc(s.name)+'">'+esc(s.name)+'</span>'+lvlBadge(s)+'</td>'+tds+'</tr>';
 }
 function renderHighlights(L, rows){
   const box=document.getElementById('lensHighlights');
@@ -696,43 +708,58 @@ function renderHighlights(L, rows){
                 '<div class="hl-card"><div class="hl-label">'+esc(L.worst)+'</div>'+mk(worst)+'</div>';
 }
 function renderLensView(){
-  const L=LENS_BY_ID[S.lens], x=S.ex;
+  const L=LENS_BY_ID[S.lens], x=S.ex, f=S.f;
   document.getElementById('lensMenu').style.display='none';
   document.getElementById('lensView').style.display='block';
   document.getElementById('lensTitle').textContent=L.title;
-  document.getElementById('lensSub').textContent='Counselor: '+L.cq+'   Leader: '+L.lq;
-  document.getElementById('exSearch').value=x.q;
-  document.getElementById('exState').innerHTML='<option value="All">All states</option>'+states.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
-  document.getElementById('exState').value=x.state;
-  document.getElementById('exLevel').value=x.level;
+  document.getElementById('lensSub').textContent='Counselor: '+L.cq+'    Leader: '+L.lq;
+  document.getElementById('exSearch').value=f.q;
+  document.getElementById('exLevel').value=f.level;
+  document.getElementById('exSector').value=f.sector;
+  renderChips('exChips','exAddState');
   document.getElementById('lensHint').textContent = L.id==='where'
     ? 'Setting is the urban-to-rural classification. With latitude and longitude now in the data, a "schools near a student" distance view is the natural next build.'
     : (L.id==='admit' ? 'SAT and ACT are blank for the many schools that do not report scores, including open-admission community colleges. Click any school for its full profile.'
-                      : 'Click any school name for its full profile across every lens. Click a column header to re-sort.');
+                      : 'Click any school name for its full profile across every lens. Star a school to pin it; pins follow you everywhere.');
   const rows=exFiltered();
   const sorted=sortBy(rows, x.sortKey||'name', x.sortDir);
   renderHighlights(L, rows);
   document.getElementById('exHead').innerHTML=exHeadHtml(L);
-  document.getElementById('exCount').textContent=rows.length.toLocaleString()+' school'+(rows.length===1?'':'s')+(rows.length>ROW_CAP?(' (showing top '+ROW_CAP+')'):'');
-  const shown=sorted.slice(0,ROW_CAP);
-  document.getElementById('exBody').innerHTML = shown.length
-    ? shown.map(s=>exRow(s,L)).join('')
-    : '<tr><td colspan="'+(L.cols.length+1)+'" class="empty">No schools match. Clear a filter.</td></tr>';
+  const pinned=SCHOOLS.filter(s=>S.saved.has(s.name));
+  const pinnedSorted=sortBy(pinned, x.sortKey||'name', x.sortDir);
+  const others=sorted.filter(s=>!S.saved.has(s.name));
+  const shown=others.slice(0,ROW_CAP);
+  document.getElementById('exCount').textContent=rows.length.toLocaleString()+' school'+(rows.length===1?'':'s')+(others.length>ROW_CAP?(' (showing top '+ROW_CAP+')'):'');
+  document.getElementById('exPinInfo').textContent=pinnedSorted.length?(pinnedSorted.length+' pinned'):'';
+  document.getElementById('exClearPins').style.display=pinnedSorted.length?'inline-block':'none';
+  let html='';
+  if(pinnedSorted.length){
+    html+='<tr class="grouprow pin"><td colspan="'+(L.cols.length+2)+'">Pinned ('+pinnedSorted.length+'): your comparison set</td></tr>';
+    html+=pinnedSorted.map(s=>exRow(s,L)).join('');
+    html+='<tr class="grouprow"><td colspan="'+(L.cols.length+2)+'">All schools</td></tr>';
+  }
+  if(shown.length) html+=shown.map(s=>exRow(s,L)).join('');
+  else if(!pinnedSorted.length) html='<tr><td colspan="'+(L.cols.length+2)+'" class="empty">No schools match. Clear a filter.</td></tr>';
+  document.getElementById('exBody').innerHTML=html;
 }
 function renderExplore(){ if(S.lens && LENS_BY_ID[S.lens]) renderLensView(); else renderLensMenu(); }
 
-document.getElementById('exSearch').oninput=e=>{ S.ex.q=e.target.value; renderLensView(); };
-document.getElementById('exState').onchange=e=>{ S.ex.state=e.target.value; renderLensView(); };
-document.getElementById('exLevel').onchange=e=>{ S.ex.level=e.target.value; renderLensView(); };
-document.getElementById('exReset').onclick=()=>{ S.ex.q='';S.ex.state='All';S.ex.level='All'; document.getElementById('exSearch').value=''; renderLensView(); };
+document.getElementById('exSearch').oninput=e=>{ S.f.q=e.target.value; renderLensView(); writeURL(); };
+document.getElementById('exLevel').onchange=e=>{ S.f.level=e.target.value; renderLensView(); writeURL(); };
+document.getElementById('exSector').onchange=e=>{ S.f.sector=e.target.value; renderLensView(); writeURL(); };
+document.getElementById('exAddState').onchange=e=>addStateFrom(e.target);
+document.getElementById('exChips').addEventListener('click', removeStateFrom);
+document.getElementById('exReset').onclick=()=>{ S.f.q='';S.f.level='All';S.f.sector='All'; renderLensView(); writeURL(); };
+document.getElementById('exClearPins').onclick=()=>{ S.saved.clear(); renderLensView(); writeURL(); };
 document.getElementById('exHead').addEventListener('click',e=>{ const th=e.target.closest('[data-sort]'); if(!th)return; const k=th.dataset.sort, x=S.ex;
   if(k===x.sortKey) x.sortDir=x.sortDir==='desc'?'asc':'desc'; else { x.sortKey=k; x.sortDir=(k==='name'||k==='state'||k==='city')?'asc':'desc'; } renderLensView(); });
-document.getElementById('exBody').addEventListener('click',e=>{ const d=e.target.closest('[data-detail]'); if(d) openDetail(d.dataset.detail); });
+document.getElementById('exBody').addEventListener('click',e=>{
+  const star=e.target.closest('.star'); if(star){ const n=star.dataset.name; if(S.saved.has(n)) S.saved.delete(n); else S.saved.add(n); renderLensView(); writeURL(); return; }
+  const d=e.target.closest('[data-detail]'); if(d) openDetail(d.dataset.detail);
+});
 document.getElementById('lensHighlights').addEventListener('click',e=>{ const d=e.target.closest('[data-detail]'); if(d) openDetail(d.dataset.detail); });
 
-// =================================================================
-// BOOT
-// =================================================================
+// ================= BOOT =================
 document.getElementById('foot').innerHTML =
   'Source: U.S. Department of Education College Scorecard, published June 2026. '+SCHOOLS.length.toLocaleString()+' colleges, four-year and community. '+
   'Graduation, debt, and earnings describe students who entered years earlier; earnings and debt cover federally aided students and are blank where suppressed for small groups. '+
@@ -740,6 +767,7 @@ document.getElementById('foot').innerHTML =
 
 readURL();
 setMode(S.mode);
+
 </script>
 </body>
 </html>
