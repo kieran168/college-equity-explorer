@@ -158,6 +158,25 @@ tbody tr.pinned-row td.td-star, tbody tr.pinned-row td.td-name { background:var(
 .startover { font:inherit; font-size:12.5px; font-weight:500; color:var(--ink-soft); background:none; border:1px solid var(--line); border-radius:8px; padding:7px 12px; cursor:pointer; }
 .startover:hover { color:var(--green); border-color:var(--green); }
 th[title], .col-check[title] { cursor:help; }
+.scorebox { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:6px 0 2px; }
+.scoreinput { font:inherit; font-size:13.5px; padding:8px 10px; border:1px solid var(--line); border-radius:9px; max-width:120px; }
+.scorehint { font-size:12px; color:var(--ink-soft); }
+.adm { display:inline-block; font-size:10.5px; font-weight:600; padding:1px 8px; border-radius:11px; border:1px solid; margin-left:5px; vertical-align:middle; }
+.adm-likely { color:#2e7d5b; border-color:#bfe0cf; background:#f0f8f3; }
+.adm-match  { color:#2a6f97; border-color:#bcd7e8; background:#eef5fa; }
+.adm-reach  { color:#a9791f; border-color:#e6d3a8; background:#fbf5e6; }
+.adm-open   { color:#5a6b7e; border-color:#d9dee4; background:#f4f6f8; }
+.dgroup-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin:16px 2px 8px; }
+.dcard { border:1px solid var(--line); border-radius:14px; background:#fff; padding:15px 17px; margin-bottom:11px; }
+.dcard.pinned { border-color:var(--green); background:var(--pin-bg); }
+.dcard-top { display:flex; align-items:flex-start; gap:10px; }
+.dcard-name { font-weight:600; font-size:15.5px; cursor:pointer; }
+.dcard-name:hover { color:var(--green); text-decoration:underline; }
+.dcard-verdict { font-size:13.5px; color:var(--ink); line-height:1.5; margin:8px 0 11px; }
+.dcard-stats { display:flex; flex-wrap:wrap; gap:9px 20px; }
+.dstat .dl { color:var(--ink-soft); display:block; font-size:10px; text-transform:uppercase; letter-spacing:.03em; margin-bottom:1px; }
+.dstat .dv { font-weight:600; font-size:13px; font-variant-numeric:tabular-nums; }
+.dcard .star { font-size:18px; margin-top:1px; }
 footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-soft); line-height:1.6; }
 @media (max-width:640px){ .landing-h1{font-size:28px;} .section-h1{font-size:23px;} .search{flex-basis:100%;} }
 </style>
@@ -169,10 +188,47 @@ footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); fo
     <div class="mark">Persist, for Student Leadership Network</div>
     <div class="topbar-right">
       <div class="tabs">
+        <button class="tab" id="tabDecide">Help me decide</button>
         <button class="tab" id="tabFind">Find a college</button>
         <button class="tab" id="tabExplore">Explore the data</button>
       </div>
       <button class="startover" id="startOver">Start over</button>
+    </div>
+  </div>
+
+  <!-- ===================== HELP ME DECIDE ===================== -->
+  <div id="decideMode" style="display:none">
+    <div id="decideStart">
+      <div class="section-head">
+        <h1 class="section-h1">Help a student find the right college</h1>
+        <p class="section-sub">Pick the student's situation and the state they are looking in, and you will get a short, ranked list with a plain read on each school: will it graduate them, can they afford it at their income, and does it pay off. Built to counter the common trap of aiming too low.</p>
+      </div>
+      <div class="statebox">
+        <span class="statebox-label">Where is the student looking?</span>
+        <span id="decChips"></span>
+        <select class="f" id="decAddState"></select>
+      </div>
+      <div class="lens-grid" id="decideProfiles" style="margin-top:18px"></div>
+    </div>
+    <div id="decideResults" style="display:none">
+      <div class="section-head">
+        <button class="backlink" id="decBack">&larr; Change the student's situation</button>
+        <h1 class="section-h1" id="decTitle"></h1>
+        <p class="section-sub" id="decNote"></p>
+      </div>
+      <div class="statebox">
+        <span class="statebox-label">State(s):</span>
+        <span id="decChips2"></span>
+        <select class="f" id="decAddState2"></select>
+      </div>
+      <div class="scorebox">
+        <span class="statebox-label">Student test score (optional):</span>
+        <select class="f" id="decScoreType"><option value="SAT">SAT</option><option value="ACT">ACT</option></select>
+        <input class="scoreinput" id="decScore" type="number" placeholder="e.g. 1100">
+        <button class="reset" id="decScoreClear">clear</button>
+        <span class="scorehint" id="decScoreHint"></span>
+      </div>
+      <div id="decideList" style="margin-top:14px"></div>
     </div>
   </div>
 
@@ -503,7 +559,7 @@ function sortBy(arr,key,dir){
 
 // ================= SHARED STATE =================
 const S = {
-  mode:'find', lens:null,
+  mode:'decide', lens:null, decide:{ profile:null, scoreType:'SAT', score:null },
   f:{ states:[], level:'All', sector:'All', q:'' },   // SHARED filters (follow you everywhere)
   saved:new Set(),                                     // SHARED pins (follow you everywhere)
   findEntered:false,
@@ -527,6 +583,8 @@ function writeURL(){
   const p=new URLSearchParams(), f=S.f;
   p.set('mode', S.mode);
   if(S.mode==='explore' && S.lens) p.set('lens', S.lens);
+  if(S.mode==='decide' && S.decide.profile) p.set('prof', S.decide.profile);
+  if(S.mode==='decide' && S.decide.score!=null) p.set('sc', S.decide.scoreType+S.decide.score);
   p.set('st', f.states.length? f.states.join(',') : 'all');
   if(f.q) p.set('q', f.q);
   if(LVL_W[f.level]) p.set('lvl', LVL_W[f.level]);
@@ -541,8 +599,10 @@ function writeURL(){
 function readURL(){
   const p=new URLSearchParams(location.search);
   if(![...p.keys()].length) return;
-  S.mode = p.get('mode')==='explore' ? 'explore' : 'find';
+  const m=p.get('mode'); S.mode = (m==='explore'||m==='find'||m==='decide') ? m : 'decide';
   if(S.mode==='explore'){ const l=p.get('lens'); if(l && LENS_BY_ID[l]) S.lens=l; }
+  if(S.mode==='decide'){ const pr=p.get('prof'); if(pr && DECIDE_PROFILES.some(x=>x.id===pr)) S.decide.profile=pr;
+    const sc=p.get('sc'); if(sc){ const t=sc.slice(0,3).toUpperCase(), n=+sc.slice(3); if((t==='SAT'||t==='ACT')&&n){ S.decide.scoreType=t; S.decide.score=n; } } }
   const f=S.f, st=p.get('st');
   if(st!=null){ f.states = (st==='all')? [] : st.split(',').filter(Boolean); }
   f.q=p.get('q')||''; f.level=LVL_R[p.get('lvl')]||'All'; f.sector=SEC_R[p.get('sec')]||'All';
@@ -599,33 +659,30 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDetail(); })
 // ================= MODE SWITCHING =================
 function setMode(m){
   S.mode = m;
+  document.getElementById('tabDecide').classList.toggle('on', m==='decide');
   document.getElementById('tabFind').classList.toggle('on', m==='find');
   document.getElementById('tabExplore').classList.toggle('on', m==='explore');
+  document.getElementById('decideMode').style.display = m==='decide' ? 'block' : 'none';
   document.getElementById('findMode').style.display = m==='find' ? 'block' : 'none';
   document.getElementById('exploreMode').style.display = m==='explore' ? 'block' : 'none';
-  if(m==='find') renderFind(); else renderExplore();
+  if(m==='decide') renderDecide(); else if(m==='find') renderFind(); else renderExplore();
   writeURL();
   window.scrollTo(0,0);
 }
 function startOver(){
-  S.mode='find'; S.lens=null;
+  S.mode='decide'; S.lens=null; S.decide={ profile:null, scoreType:'SAT', score:null };
   S.f={ states:[], level:'All', sector:'All', q:'' };
   S.saved=new Set();
   S.findEntered=false;
   S.find={ maxPrice:40000, minGrad:0, sortKey:'fit', sortDir:'desc' };
   S.ex={ sortKey:null, sortDir:'desc', cols:{}, pickerOpen:false };
-  document.getElementById('tabFind').classList.add('on');
-  document.getElementById('tabExplore').classList.remove('on');
-  document.getElementById('findMode').style.display='block';
-  document.getElementById('exploreMode').style.display='none';
-  document.getElementById('findApp').style.display='none';
-  document.getElementById('landing').style.display='block';
   document.getElementById('landingState').value='';
-  history.replaceState(null,'',location.pathname);
+  setMode('decide');
   window.scrollTo(0,0);
 }
 function renderCurrent(){
-  if(S.mode==='find'){ if(S.findEntered || S.f.states.length) renderFindApp(); else renderFind(); }
+  if(S.mode==='decide') renderDecide();
+  else if(S.mode==='find'){ if(S.findEntered || S.f.states.length) renderFindApp(); else renderFind(); }
   else { if(S.lens) renderLensView(); else renderLensMenu(); }
   writeURL();
 }
@@ -895,6 +952,162 @@ document.getElementById('lensHighlights').addEventListener('click',e=>{ const d=
 document.getElementById('colBtn').onclick=()=>{ S.ex.pickerOpen=!S.ex.pickerOpen; renderLensView(); };
 document.getElementById('colPanel').addEventListener('change',e=>{ const cb=e.target.closest('[data-col]'); if(!cb)return; toggleCol(LENS_BY_ID[S.lens], cb.dataset.col); });
 document.getElementById('colPanel').addEventListener('click',e=>{ if(e.target.id==='colReset') resetCols(LENS_BY_ID[S.lens]); else if(e.target.id==='colDone'){ S.ex.pickerOpen=false; renderLensView(); } });
+
+
+// ================= HELP ME DECIDE (persona-driven, answer-first) =================
+const DECIDE_PROFILES = [
+  { id:'pell_close', label:'Likely Pell Grant, staying close to home',
+    desc:'The student will probably qualify for a Pell Grant and wants to stay near home while keeping cost and debt low.',
+    income:'low', proximity:'instate',
+    weights:{afford:0.40, grad:0.30, debt:0.20, earn:0.10},
+    note:'Ranked mostly by net price for a lower-income family, then how well it graduates Pell students, then debt. Limited to the state or states you choose.' },
+  { id:'pell_open', label:'Likely Pell Grant, open to going further',
+    desc:'The student will probably qualify for a Pell Grant and will travel for a school that graduates them affordably and pays off.',
+    income:'low', proximity:'any',
+    weights:{afford:0.35, grad:0.30, debt:0.15, earn:0.20},
+    note:'Same money focus, but considers schools anywhere, which is the antidote to aiming too low. Net price shown is for a lower-income family.' },
+  { id:'mid_high', label:'Middle or higher income, strongest outcomes',
+    desc:'Family income is middle or higher. Focused on graduating and strong career outcomes more than rock-bottom price.',
+    income:'mid', proximity:'any',
+    weights:{afford:0.15, grad:0.40, debt:0.10, earn:0.35},
+    note:'Ranked mostly by graduation and earnings. Net price shown is for a middle-income family.' },
+  { id:'roi', label:'Best return on investment, anywhere',
+    desc:'Wants the most for the money: graduates its students, leaves them with low debt, and leads to strong earnings, wherever it is.',
+    income:'any', proximity:'any',
+    weights:{afford:0.20, grad:0.30, debt:0.20, earn:0.30},
+    note:'Balances graduation, low debt, and earnings to surface the strongest overall value.' },
+];
+
+function incomeCfg(income){
+  if(income==='low')  return { net:'net_price_low_income', debt:'debt_income_0_30k',  grad:'grad_low_income', gradLabel:'Pell grad rate' };
+  if(income==='mid')  return { net:'net_price_48_75k',     debt:'debt_income_30_75k', grad:'grad_all',        gradLabel:'Grad rate' };
+  if(income==='high') return { net:'net_price_75_110k',    debt:'debt_income_75k_plus',grad:'grad_all',       gradLabel:'Grad rate' };
+  return { net:'net_price_avg', debt:'debt_grad', grad:'grad_low_income', gradLabel:'Pell grad rate' };
+}
+const clamp01 = x => Math.max(0, Math.min(1, x));
+const ACT2SAT={36:1590,35:1540,34:1500,33:1460,32:1420,31:1400,30:1370,29:1340,28:1310,27:1280,26:1240,25:1210,24:1180,23:1140,22:1110,21:1080,20:1040,19:1000,18:970,17:930,16:890,15:850,14:800,13:760,12:710,11:670};
+function studentSAT(){ const d=S.decide; if(d.score==null) return null;
+  if(d.scoreType==='ACT'){ const a=Math.max(11,Math.min(36,Math.round(d.score))); return ACT2SAT[a]||null; }
+  return d.score; }
+function schoolSAT(s){ if(s.sat_avg!=null) return s.sat_avg;
+  if(s.act_mid!=null){ const a=Math.max(11,Math.min(36,Math.round(s.act_mid))); return ACT2SAT[a]||null; } return null; }
+function admit(s){
+  const ar=s.admission_rate, stu=studentSAT(), sch=schoolSAT(s);
+  if(stu!=null && sch!=null){
+    const diff=stu-sch; let res;
+    if(diff>=60) res={label:'Likely admit',chance:0.85,cls:'adm-likely'};
+    else if(diff>=-50) res={label:'Match',chance:0.55,cls:'adm-match'};
+    else if(diff>=-160) res={label:'Reach',chance:0.30,cls:'adm-reach'};
+    else res={label:'Far reach',chance:0.12,cls:'adm-reach'};
+    if(ar!=null && ar<0.20 && res.chance>0.40) res={label:'Reach, very selective',chance:0.32,cls:'adm-reach'};
+    return res;
+  }
+  if(ar==null) return {label:'',chance:null,cls:''};
+  if(ar>=0.95) return {label:'Open access',chance:0.95,cls:'adm-open'};
+  if(ar>=0.75) return {label:'Likely admit',chance:0.82,cls:'adm-likely'};
+  if(ar>=0.50) return {label:'Possible',chance:0.55,cls:'adm-match'};
+  if(ar>=0.25) return {label:'Selective',chance:0.32,cls:'adm-reach'};
+  return {label:'Highly selective',chance:0.15,cls:'adm-reach'};
+}
+function decScore(s, P){
+  const c=incomeCfg(P.income), parts=[], wts=[];
+  const np=s[c.net];               if(np!=null){ parts.push(clamp01((30000-np)/30000)); wts.push(P.weights.afford); }
+  const g=s[c.grad];               if(g!=null){  parts.push(g);                          wts.push(P.weights.grad); }
+  const d=(s[c.debt]!=null?s[c.debt]:s.debt_grad); if(d!=null){ parts.push(clamp01((40000-d)/40000)); wts.push(P.weights.debt); }
+  const e=s.earn_above_hs_share;   if(e!=null){  parts.push(e);                          wts.push(P.weights.earn); }
+  const adm=(S.decide.score!=null)?admit(s).chance:null;
+  if(adm!=null){ parts.push(adm); wts.push(0.30); }
+  const tw=wts.reduce((a,b)=>a+b,0); if(tw===0) return null;
+  let sc=0; for(let i=0;i<parts.length;i++) sc+=parts[i]*wts[i];
+  return sc/tw;
+}
+function decVerdict(s, P){
+  const c=incomeCfg(P.income);
+  const g=s[c.grad], np=s[c.net], d=(s[c.debt]!=null?s[c.debt]:s.debt_grad), e=s.earn_above_hs_share, bits=[];
+  if(g!=null)  bits.push(g>=0.6?'graduates most of its students':g>=0.4?'graduates many students':'has a low graduation rate, a real risk to weigh');
+  if(np!=null) bits.push(np<=8000?'very affordable at this income':np<=18000?'moderately affordable':'expensive at this income');
+  if(d!=null)  bits.push(d<=15000?'low debt':d<=27000?'moderate debt':'high debt');
+  if(e!=null)  bits.push(e>=0.7?'a strong payoff':e>=0.55?'a decent payoff':'a weaker payoff');
+  if(!bits.length) return 'Limited data reported for this school.';
+  const v=bits.join(', ');
+  return v.charAt(0).toUpperCase()+v.slice(1)+'.';
+}
+function decTier(s, P){
+  const c=incomeCfg(P.income), g=s[c.grad];
+  if(g!=null && g<0.40) return 'Caution';
+  const sc=decScore(s,P); if(sc==null) return 'Fair';
+  if(sc>=0.62) return 'Strong'; if(sc>=0.48) return 'Good'; if(sc>=0.34) return 'Fair'; return 'Caution';
+}
+function decFiltered(P){
+  const f=S.f;
+  return SCHOOLS.filter(s=>{
+    if(f.states.length && !f.states.includes(s.state)) return false;
+    if(f.level!=='All' && s.level!==f.level) return false;
+    return true;
+  });
+}
+function decCard(s, P){
+  const c=incomeCfg(P.income), tier=decTier(s,P), on=S.saved.has(s.name), a=admit(s);
+  const debtV=(s[c.debt]!=null?s[c.debt]:s.debt_grad);
+  const stats=[[c.gradLabel,pctf(s[c.grad])],['Net price',moneyNet(s[c.net])],['Median debt',money(debtV)],['Earnings 10yr',money(s.earn_10yr)],['Out-earn HS grad',pctf(s.earn_above_hs_share)]];
+  const statHtml=stats.map(t=>'<div class="dstat"><span class="dl">'+t[0]+'</span><span class="dv">'+t[1]+'</span></div>').join('');
+  return '<div class="dcard'+(on?' pinned':'')+'">'+
+    '<div class="dcard-top">'+
+      '<button class="star'+(on?' on':'')+'" data-name="'+esc(s.name)+'" title="'+(on?'Unpin':'Pin to compare')+'">'+(on?'\u2605':'\u2606')+'</button>'+
+      '<div style="flex:1">'+
+        '<span class="dcard-name" data-detail="'+esc(s.name)+'">'+esc(s.name)+'</span>'+lvlBadge(s)+' <span class="pill '+tier+'">'+tier+'</span>'+(a.label?' <span class="adm '+a.cls+'">'+esc(a.label)+'</span>':'')+
+        '<div class="dcard-verdict">'+esc(decVerdict(s,P))+'</div>'+
+        '<div class="dcard-stats">'+statHtml+'</div>'+
+      '</div>'+
+    '</div></div>';
+}
+function renderDecideStart(){
+  document.getElementById('decideStart').style.display='block';
+  document.getElementById('decideResults').style.display='none';
+  renderChips('decChips','decAddState');
+  document.getElementById('decideProfiles').innerHTML = DECIDE_PROFILES.map(p=>
+    '<button class="lens-card" data-prof="'+p.id+'"><h3>'+esc(p.label)+'</h3><p>'+esc(p.desc)+'</p></button>').join('');
+}
+function openProfile(id){ S.decide.profile=id; renderDecideResults(); writeURL(); window.scrollTo(0,0); }
+function renderDecideResults(){
+  const P=DECIDE_PROFILES.find(p=>p.id===S.decide.profile);
+  if(!P){ renderDecideStart(); return; }
+  document.getElementById('decideStart').style.display='none';
+  document.getElementById('decideResults').style.display='block';
+  document.getElementById('decTitle').textContent=P.label;
+  document.getElementById('decNote').textContent=P.note;
+  renderChips('decChips2','decAddState2');
+  document.getElementById('decScoreType').value=S.decide.scoreType;
+  document.getElementById('decScore').value=(S.decide.score!=null?S.decide.score:'');
+  document.getElementById('decScoreHint').textContent = S.decide.score!=null
+    ? 'Admission chances are now weighed into the ranking and shown on each card.'
+    : 'Optional. Scores are not reported for many schools (community colleges included), and GPA is not in this data.';
+  const list=document.getElementById('decideList');
+  if(P.proximity==='instate' && !S.f.states.length){
+    list.innerHTML='<div class="t5empty">Add the student\u2019s state above to see schools close to home.</div>'; return;
+  }
+  const all=decFiltered(P).map(s=>({s,score:decScore(s,P)})).filter(o=>o.score!=null).sort((a,b)=>b.score-a.score);
+  const pinned=all.filter(o=>S.saved.has(o.s.name));
+  const others=all.filter(o=>!S.saved.has(o.s.name)).slice(0,20);
+  let html='';
+  if(pinned.length){ html+='<div class="dgroup-label">Pinned to compare</div>'+pinned.map(o=>decCard(o.s,P)).join(''); html+='<div class="dgroup-label">Top matches</div>'; }
+  html+= others.length ? others.map(o=>decCard(o.s,P)).join('') : '<div class="t5empty">No schools match. Try a different situation or add more states.</div>';
+  list.innerHTML=html;
+}
+function renderDecide(){ if(S.decide.profile && DECIDE_PROFILES.some(p=>p.id===S.decide.profile)) renderDecideResults(); else renderDecideStart(); }
+
+document.getElementById('tabDecide').onclick = ()=>setMode('decide');
+document.getElementById('decideProfiles').addEventListener('click', e=>{ const b=e.target.closest('[data-prof]'); if(b) openProfile(b.dataset.prof); });
+document.getElementById('decBack').onclick = ()=>{ S.decide.profile=null; renderDecideStart(); writeURL(); window.scrollTo(0,0); };
+['decAddState','decAddState2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.onchange=e=>addStateFrom(e.target); });
+['decChips','decChips2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('click', removeStateFrom); });
+document.getElementById('decideList').addEventListener('click', e=>{
+  const star=e.target.closest('.star'); if(star){ const n=star.dataset.name; if(S.saved.has(n)) S.saved.delete(n); else S.saved.add(n); renderDecideResults(); writeURL(); return; }
+  const d=e.target.closest('[data-detail]'); if(d) openDetail(d.dataset.detail);
+});
+document.getElementById('decScoreType').onchange=e=>{ S.decide.scoreType=e.target.value; renderDecideResults(); writeURL(); };
+document.getElementById('decScore').oninput=e=>{ const v=e.target.value.trim(); S.decide.score=(v===''?null:+v); renderDecideResults(); writeURL(); };
+document.getElementById('decScoreClear').onclick=()=>{ S.decide.score=null; document.getElementById('decScore').value=''; renderDecideResults(); writeURL(); };
 
 // ================= BOOT =================
 document.getElementById('foot').innerHTML =
