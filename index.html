@@ -159,6 +159,26 @@ tbody tr.pinned-row td.td-star, tbody tr.pinned-row td.td-name { background:var(
 .startover:hover { color:var(--green); border-color:var(--green); }
 .spectoggle { font-size:12px; color:var(--ink-soft); display:inline-flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap; }
 .spectoggle input { accent-color:var(--green); cursor:pointer; }
+.dl-link { font:inherit; font-size:11.5px; font-weight:600; color:var(--green); background:none; border:none; padding:0; cursor:pointer; text-decoration:underline; }
+.lookup { margin-top:4px; }
+.lookup-label { display:block; font-size:13px; font-weight:600; margin-bottom:7px; }
+.lookup-input { width:100%; max-width:540px; font:inherit; font-size:15px; padding:13px 15px; border:2px solid var(--green); border-radius:11px; background:#fff; }
+.lookup-input:focus-visible { outline:3px solid var(--green-soft); }
+.or-divider { display:flex; align-items:center; text-align:center; color:var(--ink-soft); font-size:12.5px; font-weight:600; margin:26px 0 4px; }
+.or-divider::before, .or-divider::after { content:''; flex:1; height:1px; background:var(--line); }
+.or-divider span { padding:0 14px; }
+.lk-card { border:1px solid var(--green); border-radius:14px; background:#fff; padding:18px 20px; margin-top:14px; }
+.lk-name { font-family:'Fraunces',serif; font-weight:600; font-size:20px; margin:0; }
+.lk-meta { font-size:12.5px; color:var(--ink-soft); margin:3px 0 0; }
+.lk-verdict { font-size:14.5px; line-height:1.5; margin:12px 0 14px; }
+.lk-npr { background:var(--green-soft); border-radius:10px; padding:11px 13px; margin-bottom:14px; }
+.lk-npr-h { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--green); margin-bottom:7px; }
+.lk-npr-row { display:flex; flex-wrap:wrap; gap:6px 16px; }
+.np-cell { font-size:12.5px; } .np-cell b { color:var(--ink); }
+.lk-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:11px 16px; }
+.lk-stat .dl { color:var(--ink-soft); display:block; font-size:10px; text-transform:uppercase; letter-spacing:.03em; margin-bottom:1px; }
+.lk-stat .dv { font-weight:600; font-size:14px; font-variant-numeric:tabular-nums; }
+.lk-actions { margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; }
 th[title], .col-check[title] { cursor:help; }
 .scorebox { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:6px 0 2px; }
 .scoreinput { font:inherit; font-size:13.5px; padding:8px 10px; border:1px solid var(--line); border-radius:9px; max-width:120px; }
@@ -203,9 +223,18 @@ footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); fo
   <div id="decideMode" style="display:none">
     <div id="decideStart">
       <div class="section-head">
-        <h1 class="section-h1">Help a student find the right college</h1>
-        <p class="section-sub">Pick the student's situation and the state they are looking in, and you will get a short, ranked list with a plain read on each school: will it graduate them, can they afford it at their income, and does it pay off. Built to counter the common trap of aiming too low.</p>
+        <h1 class="section-h1">What can a student expect from a college?</h1>
+        <p class="section-sub">Look up any college to see the plain story: how many students graduate, what families actually pay after aid, and the debt and earnings to expect. Or scroll down to find the best-fit schools for a student's situation.</p>
       </div>
+      <div class="lookup">
+        <label class="lookup-label" for="lookupInput">Look up a college</label>
+        <input class="lookup-input" id="lookupInput" list="schoolList" placeholder="Type a college name, for example Rutgers University-New Brunswick">
+        <datalist id="schoolList"></datalist>
+      </div>
+      <div id="lookupResult"></div>
+
+      <div class="or-divider"><span>Or find the best-fit schools for a student</span></div>
+
       <div class="statebox">
         <span class="statebox-label">Where is the student looking?</span>
         <span id="decChips"></span>
@@ -444,6 +473,8 @@ const F = {
   city:{l:'City',f:strf,g:'where'},
   zip:{l:'ZIP',f:strf,g:'where'},
   locale_code:{l:'Setting',f:localef,g:'where'},
+  carnegie:{l:'Carnegie type code',f:numf,g:'where'},
+  religious:{l:'Religious affiliation code',f:numf,g:'where'},
 };
 const DESC = {
   size:'Number of undergraduates enrolled.',
@@ -505,6 +536,8 @@ const DESC = {
   city:'City where the school is located.',
   zip:'Postal ZIP code of the school.',
   locale_code:'Whether the campus is in a city, suburb, town, or rural area.',
+  carnegie:'Carnegie Classification code for institution type. Special Focus codes flag single-subject schools (seminaries, trade, art, etc.).',
+  religious:'Religious affiliation code (numeric), blank if none.',
 };
 const fmt = (k,v) => (F[k] ? F[k].f(v) : (v==null?NA:esc(v)));
 const isNum = k => F[k] && F[k].f!==strf && F[k].f!==localef;
@@ -1121,13 +1154,66 @@ document.getElementById('decScoreType').onchange=e=>{ S.decide.scoreType=e.targe
 document.getElementById('decScore').oninput=e=>{ const v=e.target.value.trim(); S.decide.score=(v===''?null:+v); renderDecideResults(); writeURL(); };
 document.getElementById('decScoreClear').onclick=()=>{ S.decide.score=null; document.getElementById('decScore').value=''; renderDecideResults(); writeURL(); };
 
+// ================= SINGLE-SCHOOL LOOKUP (instant value) =================
+function renderLookup(s){
+  const box=document.getElementById('lookupResult');
+  if(!s){ box.innerHTML=''; return; }
+  const on=S.saved.has(s.name);
+  const g=s.grad_all, e=s.earn_above_hs_share;
+  const gP = g==null?'':(g>=0.6?'graduates most of its students':g>=0.4?'graduates many of its students':'has a low graduation rate, a real risk to weigh');
+  const eP = e==null?'':(e>=0.7?'a strong payoff':e>=0.55?'a decent payoff':'a weaker payoff');
+  let v = gP ? gP.charAt(0).toUpperCase()+gP.slice(1) : '';
+  if(eP) v += (v?', with ':'Offers ')+eP;
+  v = v ? v+'.' : 'Limited outcome data is reported for this school.';
+  const meta=[s.level,s.sector,[s.city,s.state].filter(Boolean).join(', ')].filter(Boolean).join('   \u00B7   ');
+  const np=[['Under $30k','net_price_low_income'],['$30-48k','net_price_30_48k'],['$48-75k','net_price_48_75k'],['$75-110k','net_price_75_110k'],['$110k+','net_price_110k_plus']];
+  const npCells=np.map(p=> s[p[1]]!=null?'<span class="np-cell"><b>'+p[0]+':</b> '+moneyNet(s[p[1]])+'</span>':'').filter(Boolean).join('');
+  const stats=[['Overall grad rate',pctf(s.grad_all)],['Pell (lower-income) grad',pctf(s.grad_low_income)],['First-year retention',pctf(s.retention)],['Median debt at graduation',money(s.debt_grad)],['Est. monthly loan payment',monthlyf(s.debt_monthly)],['Earnings, 10 yrs after entry',money(s.earn_10yr)],['Out-earn a HS grad',pctf(s.earn_above_hs_share)],['Admit rate',admitf(s.admission_rate)]];
+  const statHtml=stats.map(t=>'<div class="lk-stat"><span class="dl">'+t[0]+'</span><span class="dv">'+t[1]+'</span></div>').join('');
+  box.innerHTML='<div class="lk-card">'+
+    '<h3 class="lk-name">'+esc(s.name)+'</h3><p class="lk-meta">'+esc(meta)+'</p>'+
+    '<p class="lk-verdict">'+esc(v)+'</p>'+
+    (npCells?'<div class="lk-npr"><div class="lk-npr-h">What families pay per year after aid, by income</div><div class="lk-npr-row">'+npCells+'</div></div>':'')+
+    '<div class="lk-stats">'+statHtml+'</div>'+
+    '<div class="lk-actions"><button class="linkbtn" data-lkpin="'+esc(s.name)+'">'+(on?'\u2605 Pinned':'\u2606 Pin to compare')+'</button>'+
+    '<button class="linkbtn" data-lkdetail="'+esc(s.name)+'">See full profile</button></div>'+
+    '</div>';
+}
+document.getElementById('lookupInput').addEventListener('input', e=>{ renderLookup(byName[e.target.value]||null); });
+document.getElementById('lookupResult').addEventListener('click', e=>{
+  const pin=e.target.closest('[data-lkpin]'); if(pin){ const n=pin.dataset.lkpin; if(S.saved.has(n)) S.saved.delete(n); else S.saved.add(n); renderLookup(byName[n]); return; }
+  const det=e.target.closest('[data-lkdetail]'); if(det) openDetail(det.dataset.lkdetail);
+});
+
+// ================= DOWNLOAD THE DATA =================
+function toCSV(rows){
+  if(!rows.length) return '';
+  const cols=Object.keys(rows[0]);
+  const cell=v=> v==null?'':(/[",\n]/.test(String(v))?'"'+String(v).replace(/"/g,'""')+'"':String(v));
+  return cols.join(',')+'\n'+rows.map(r=>cols.map(c=>cell(r[c])).join(',')).join('\n');
+}
+function fieldGuideRows(){ return Object.keys(DESC).map(k=>({ column:k, label:(F[k]?F[k].l:k), description:DESC[k] })); }
+function triggerDownload(content,type,fname){
+  const blob=new Blob([content],{type}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=fname;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+function downloadData(fmt){
+  if(fmt==='csv') triggerDownload(toCSV(SCHOOLS),'text/csv;charset=utf-8','college_scorecard_data.csv');
+  else if(fmt==='json') triggerDownload(JSON.stringify(SCHOOLS,null,2),'application/json','college_scorecard_data.json');
+  else if(fmt==='guide') triggerDownload(toCSV(fieldGuideRows()),'text/csv;charset=utf-8','college_scorecard_field_guide.csv');
+}
+
 // ================= BOOT =================
 document.getElementById('foot').innerHTML =
-  'Source: U.S. Department of Education College Scorecard, published June 2026. '+SCHOOLS.length.toLocaleString()+' colleges, four-year and community. '+
-  'Graduation, debt, and earnings describe students who entered years earlier; earnings and debt cover federally aided students and are blank where suppressed for small groups. '+
-  '"Pell-eligible" is the federal marker for lower-income students. Built for Student Leadership Network.';
+  '<p style="margin:0 0 9px">Source: U.S. Department of Education College Scorecard, updated June 10, 2026 (institution-level data through 2025-26). '+SCHOOLS.length.toLocaleString()+' four-year and community colleges. '+
+  'Cost, net price, tuition, admissions, and demographics reflect the most recent year (about 2024-25). Graduation rates describe students who entered roughly six years earlier; ten-year earnings describe students who entered about a decade earlier; debt covers recent graduating classes. '+
+  'Outcome figures cover federally aided students and are blank where suppressed for small groups. "Pell-eligible" is the federal marker for lower-income students.</p>'+
+  '<p style="margin:0">Download the full dataset for your own analysis: <button class="dl-link" data-dl="csv">CSV</button> &middot; <button class="dl-link" data-dl="json">JSON</button> &middot; <button class="dl-link" data-dl="guide">field guide</button> (what each column means). Built for Student Leadership Network.</p>';
+document.getElementById('foot').addEventListener('click', e=>{ const b=e.target.closest('[data-dl]'); if(b) downloadData(b.dataset.dl); });
 
 readURL();
+document.getElementById('schoolList').innerHTML = SCHOOLS.map(s=>'<option value="'+esc(s.name)+'"></option>').join('');
 document.getElementById('hideSpecial').checked = S.f.hideSpecial;
 setMode(S.mode);
 
