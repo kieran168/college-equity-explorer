@@ -199,6 +199,46 @@ th[title], .col-check[title] { cursor:help; }
 .dstat .dl { color:var(--ink-soft); display:block; font-size:10px; text-transform:uppercase; letter-spacing:.03em; margin-bottom:1px; }
 .dstat .dv { font-weight:600; font-size:13px; font-variant-numeric:tabular-nums; }
 .dcard .star { font-size:18px; margin-top:1px; }
+#landingPage { display:none; }
+.lp-top { padding:22px 0 0; }
+.lp-hero { display:grid; grid-template-columns:1.15fr 1fr; gap:40px; align-items:center; padding:46px 0 38px; }
+.lp-h1 { font-family:'Fraunces',serif; font-weight:600; font-size:42px; line-height:1.08; letter-spacing:-.015em; margin:0 0 18px; }
+.lp-sub { font-size:18px; line-height:1.5; color:var(--ink-soft); margin:0 0 16px; max-width:38ch; }
+.lp-trust { font-size:13px; color:var(--ink-soft); margin:0 0 26px; font-weight:500; }
+.lp-cta { display:flex; gap:12px; flex-wrap:wrap; }
+.lp-btn-primary { font:inherit; font-size:16px; font-weight:600; color:#fff; background:var(--green); border:none; border-radius:11px; padding:14px 26px; cursor:pointer; }
+.lp-btn-primary:hover { background:#163f72; }
+.lp-btn-ghost { font:inherit; font-size:16px; font-weight:600; color:var(--green); background:none; border:1.5px solid var(--green); border-radius:11px; padding:13px 22px; cursor:pointer; }
+.lp-btn-ghost:hover { background:var(--green-soft); }
+.lp-hero-card { border:1px solid var(--line); border-radius:16px; background:#fff; padding:20px 22px; box-shadow:0 8px 30px rgba(22,38,58,.08); }
+.lp-card-tag { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#b8860b; margin-bottom:9px; }
+.lp-card-name { font-family:'Fraunces',serif; font-weight:600; font-size:21px; line-height:1.15; }
+.lp-card-sub { font-size:12.5px; color:var(--ink-soft); margin:3px 0 12px; }
+.lp-card-verdict { font-size:14px; line-height:1.5; margin-bottom:14px; }
+.lp-card-stats { display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; }
+.lp-cs .dl { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); }
+.lp-cs .dv { font-weight:600; font-size:15px; font-variant-numeric:tabular-nums; }
+.lp-card-foot { font-size:11.5px; color:var(--ink-soft); margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
+.lp-modes { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; padding:14px 0 38px; }
+.lp-mode { text-align:left; border:1px solid var(--line); border-radius:14px; background:#fff; padding:20px 21px; cursor:pointer; font:inherit; transition:border-color .12s, box-shadow .12s; }
+.lp-mode:hover { border-color:var(--green); box-shadow:0 4px 16px rgba(22,38,58,.07); }
+.lp-mode-k { font-family:'IBM Plex Mono',monospace; font-size:11px; color:#b8860b; font-weight:500; margin-bottom:7px; }
+.lp-mode h3 { font-family:'Fraunces',serif; font-weight:600; font-size:19px; margin:0 0 8px; color:var(--ink); }
+.lp-mode p { font-size:13px; line-height:1.5; color:var(--ink-soft); margin:0 0 12px; }
+.lp-mode-go { font-size:13px; font-weight:600; color:var(--green); }
+.lp-why, .lp-trust-band { padding:34px 0; border-top:1px solid var(--line); }
+.lp-h2 { font-family:'Fraunces',serif; font-weight:600; font-size:25px; margin:0 0 20px; }
+.lp-why-grid, .lp-trust-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+.lp-why-num { font-family:'Fraunces',serif; font-weight:600; font-size:17px; color:var(--green); margin-bottom:8px; }
+.lp-why-card p, .lp-trust-grid p { font-size:13.5px; line-height:1.55; color:var(--ink-soft); margin:0; }
+.lp-trust-grid h4 { font-size:13.5px; font-weight:700; margin:0 0 7px; color:var(--ink); }
+.lp-footer { padding:28px 0 10px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-soft); line-height:1.6; }
+.lp-footer p { margin:0 0 6px; }
+@media (max-width:820px){
+  .lp-hero { grid-template-columns:1fr; gap:24px; padding:28px 0 26px; }
+  .lp-h1 { font-size:31px; }
+  .lp-modes, .lp-why-grid, .lp-trust-grid { grid-template-columns:1fr; }
+}
 footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-soft); line-height:1.6; }
 @media (max-width:640px){ .landing-h1{font-size:28px;} .section-h1{font-size:23px;} .search{flex-basis:100%;} }
 </style>
@@ -206,8 +246,55 @@ footer { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); fo
 <body>
 <div class="wrap">
 
-  <div class="topbar">
-    <div class="mark">Persist, for Student Leadership Network</div>
+  <div id="landingPage" style="display:none">
+    <header class="lp-top"><div class="mark">Persist, for Student Leadership Network</div></header>
+
+    <section class="lp-hero">
+      <div class="lp-hero-text">
+        <h1 class="lp-h1">Find a college you can afford and actually finish.</h1>
+        <p class="lp-sub">Persist turns official U.S. Department of Education data into clear answers about what families really pay after aid, how many students graduate, and the debt and earnings to expect.</p>
+        <p class="lp-trust">Free. Built on U.S. Department of Education College Scorecard data, updated June 2026.</p>
+        <div class="lp-cta">
+          <button class="lp-btn-primary" data-go="decide">Help me decide</button>
+          <button class="lp-btn-ghost" data-go="decide-lookup">Look up a college</button>
+        </div>
+      </div>
+      <div class="lp-hero-card" id="lpSample"></div>
+    </section>
+
+    <section class="lp-modes">
+      <button class="lp-mode" data-go="decide"><div class="lp-mode-k">Start here</div><h3>Help me decide</h3><p>Answer a few quick questions and get a ranked shortlist with plain-language verdicts and a badge showing the odds of getting in.</p><span class="lp-mode-go">Get a shortlist &rarr;</span></button>
+      <button class="lp-mode" data-go="find"><div class="lp-mode-k">Browse</div><h3>Find a college</h3><p>Start with your state and narrow from there to compare real costs and graduation rates side by side.</p><span class="lp-mode-go">Browse by state &rarr;</span></button>
+      <button class="lp-mode" data-go="explore"><div class="lp-mode-k">Go deep</div><h3>Explore the data</h3><p>Dig into six views of the data on cost, aid, graduation, debt, and earnings. Great for counselors and curious families.</p><span class="lp-mode-go">Open the lenses &rarr;</span></button>
+    </section>
+
+    <section class="lp-why">
+      <h2 class="lp-h2">Why this matters</h2>
+      <div class="lp-why-grid">
+        <div class="lp-why-card"><div class="lp-why-num">Net price, not sticker</div><p>The published price is not what most families pay. Many rule out a college over a price tag that the right aid would erase. Persist shows what families at your income actually pay.</p></div>
+        <div class="lp-why-card"><div class="lp-why-num">Graduating is the goal</div><p>Whether college pays off depends most on finishing, and graduation rates vary enormously between schools that look alike. Persist puts the real rates front and center.</p></div>
+        <div class="lp-why-card"><div class="lp-why-num">Debt without a degree</div><p>The worst outcome is debt and no diploma. Nationally, close to 6 in 10 borrowers who do not finish fall into default. Persist steers toward schools that graduate students affordably.</p></div>
+      </div>
+    </section>
+
+    <section class="lp-trust-band">
+      <h2 class="lp-h2">Where the numbers come from</h2>
+      <div class="lp-trust-grid">
+        <div><h4>Official federal data</h4><p>Every figure comes from the U.S. Department of Education College Scorecard, updated June 2026. Cost and aid reflect the most recent year; graduation and earnings describe earlier classes, by design.</p></div>
+        <div><h4>How the read is made</h4><p>The plain-language verdict on each school weighs graduation, net price for the student's income, debt, and earnings. No school is hidden for being a reach; reaches are labeled so students can aim with eyes open.</p></div>
+        <div><h4>Your information stays private</h4><p>Anything you type, like a state or a test score, stays in your browser. Nothing is saved to a server or sent anywhere.</p></div>
+      </div>
+    </section>
+
+    <footer class="lp-footer">
+      <p>Built for Student Leadership Network, which has served lower-income and first-generation students for over 25 years. Source: U.S. Department of Education College Scorecard, updated June 10, 2026.</p>
+      <p>Download the full dataset for your own analysis: <button class="dl-link" data-dl="csv">CSV</button> &middot; <button class="dl-link" data-dl="json">JSON</button> &middot; <button class="dl-link" data-dl="guide">field guide</button>.</p>
+    </footer>
+  </div>
+
+
+  <div class="topbar" id="topbar">
+    <div class="mark" id="brandHome" style="cursor:pointer" title="Back to start">Persist, for Student Leadership Network</div>
     <div class="topbar-right">
       <div class="tabs">
         <button class="tab" id="tabDecide">Help me decide</button>
@@ -597,7 +684,7 @@ function sortBy(arr,key,dir){
 
 // ================= SHARED STATE =================
 const S = {
-  mode:'decide', lens:null, decide:{ profile:null, scoreType:'SAT', score:null },
+  mode:'landing', lens:null, decide:{ profile:null, scoreType:'SAT', score:null },
   f:{ states:[], level:'All', sector:'All', q:'', hideSpecial:true },   // SHARED filters (follow you everywhere)
   saved:new Set(),                                     // SHARED pins (follow you everywhere)
   findEntered:false,
@@ -618,6 +705,7 @@ const fitVal = s => (s.grad_low_income < 0.35 ? -1 : fitScore(s));
 const LVL_W={'4-year':'4yr','2-year (community)':'2yr'}, LVL_R={'4yr':'4-year','2yr':'2-year (community)'};
 const SEC_W={'Public':'pub','Private nonprofit':'np','Private for-profit':'fp'}, SEC_R={'pub':'Public','np':'Private nonprofit','fp':'Private for-profit'};
 function writeURL(){
+  if(S.mode==='landing'){ history.replaceState(null,'',location.pathname); return; }
   const p=new URLSearchParams(), f=S.f;
   p.set('mode', S.mode);
   if(S.mode==='explore' && S.lens) p.set('lens', S.lens);
@@ -638,7 +726,7 @@ function writeURL(){
 function readURL(){
   const p=new URLSearchParams(location.search);
   if(![...p.keys()].length) return;
-  const m=p.get('mode'); S.mode = (m==='explore'||m==='find'||m==='decide') ? m : 'decide';
+  const m=p.get('mode'); S.mode = (m==='explore'||m==='find'||m==='decide') ? m : 'landing';
   if(S.mode==='explore'){ const l=p.get('lens'); if(l && LENS_BY_ID[l]) S.lens=l; }
   if(S.mode==='decide'){ const pr=p.get('prof'); if(pr && DECIDE_PROFILES.some(x=>x.id===pr)) S.decide.profile=pr;
     const sc=p.get('sc'); if(sc){ const t=sc.slice(0,3).toUpperCase(), n=+sc.slice(3); if((t==='SAT'||t==='ACT')&&n){ S.decide.scoreType=t; S.decide.score=n; } } }
@@ -699,13 +787,17 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDetail(); })
 // ================= MODE SWITCHING =================
 function setMode(m){
   S.mode = m;
+  const onLanding = (m==='landing');
+  document.getElementById('landingPage').style.display = onLanding ? 'block' : 'none';
+  document.getElementById('topbar').style.display = onLanding ? 'none' : 'flex';
+  document.getElementById('foot').style.display = onLanding ? 'none' : '';
   document.getElementById('tabDecide').classList.toggle('on', m==='decide');
   document.getElementById('tabFind').classList.toggle('on', m==='find');
   document.getElementById('tabExplore').classList.toggle('on', m==='explore');
   document.getElementById('decideMode').style.display = m==='decide' ? 'block' : 'none';
   document.getElementById('findMode').style.display = m==='find' ? 'block' : 'none';
   document.getElementById('exploreMode').style.display = m==='explore' ? 'block' : 'none';
-  if(m==='decide') renderDecide(); else if(m==='find') renderFind(); else renderExplore();
+  if(m==='decide') renderDecide(); else if(m==='find') renderFind(); else if(m==='explore') renderExplore();
   writeURL();
   window.scrollTo(0,0);
 }
@@ -1185,6 +1277,28 @@ document.getElementById('lookupResult').addEventListener('click', e=>{
   const det=e.target.closest('[data-lkdetail]'); if(det) openDetail(det.dataset.lkdetail);
 });
 
+// ================= LANDING SAMPLE CARD =================
+function lpVerdict(s){
+  const g=(s.grad_low_income!=null?s.grad_low_income:s.grad_all), e=s.earn_above_hs_share, np=s.net_price_low_income, d=s.debt_grad, bits=[];
+  if(g!=null) bits.push(g>=0.6?'graduates most of its students':g>=0.4?'graduates many students':'has a low graduation rate');
+  if(np!=null) bits.push(np<=8000?'very affordable for a lower-income family':np<=18000?'moderately affordable':'pricey at this income');
+  if(d!=null) bits.push(d<=15000?'low debt':d<=27000?'moderate debt':'high debt');
+  if(e!=null) bits.push(e>=0.7?'a strong payoff':e>=0.55?'a decent payoff':'a weaker payoff');
+  const v=bits.join(', '); return v?v.charAt(0).toUpperCase()+v.slice(1)+'.':'';
+}
+function renderSample(){
+  const box=document.getElementById('lpSample'); if(!box) return;
+  const s = byName['CUNY City College'] || SCHOOLS.find(x=>x.grad_low_income!=null && x.grad_low_income>=0.5 && x.net_price_low_income!=null && x.net_price_low_income<6000 && x.earn_10yr!=null && x.earn_10yr>=50000 && !isSpecialized(x));
+  if(!s){ box.style.display='none'; return; }
+  const stats=[['Graduation (Pell)',pctf(s.grad_low_income)],['Net price',moneyNet(s.net_price_low_income)],['Median debt',money(s.debt_grad)],['Earnings, 10 yr',money(s.earn_10yr)]];
+  box.innerHTML='<div class="lp-card-tag">Example result</div>'+
+    '<div class="lp-card-name">'+esc(s.name)+'</div>'+
+    '<div class="lp-card-sub">For a Pell-eligible student in '+esc(s.state)+'</div>'+
+    '<div class="lp-card-verdict">'+esc(lpVerdict(s))+'</div>'+
+    '<div class="lp-card-stats">'+stats.map(t=>'<div class="lp-cs"><span class="dl">'+t[0]+'</span><span class="dv">'+t[1]+'</span></div>').join('')+'</div>'+
+    '<div class="lp-card-foot">One example. Look up your own school or situation inside.</div>';
+}
+
 // ================= DOWNLOAD THE DATA =================
 function toCSV(rows){
   if(!rows.length) return '';
@@ -1215,6 +1329,15 @@ document.getElementById('foot').addEventListener('click', e=>{ const b=e.target.
 readURL();
 document.getElementById('schoolList').innerHTML = SCHOOLS.map(s=>'<option value="'+esc(s.name)+'"></option>').join('');
 document.getElementById('hideSpecial').checked = S.f.hideSpecial;
+renderSample();
+document.getElementById('brandHome').onclick = ()=>setMode('landing');
+document.getElementById('landingPage').addEventListener('click', e=>{
+  const dl=e.target.closest('[data-dl]'); if(dl){ downloadData(dl.dataset.dl); return; }
+  const go=e.target.closest('[data-go]'); if(!go) return;
+  const g=go.dataset.go;
+  if(g==='decide-lookup'){ setMode('decide'); const inp=document.getElementById('lookupInput'); if(inp) inp.focus(); }
+  else setMode(g);
+});
 setMode(S.mode);
 
 </script>
